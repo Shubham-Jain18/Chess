@@ -13,11 +13,37 @@ let enpblack = 0b000;
 //there will be four bits : [white kingside][white queen side][black kingside][black queen side]
 
 
-for (let i = 0; i < 64; i++) {
-    gamestate[i] = 0b0000;
+const none = 0b0000;
+const pawn = 0b0001;
+const rook = 0b0010;
+const knight = 0b0011;
+const bishop = 0b0100;
+const queen = 0b0101;
+const king = 0b0110;
+const white = 0b1000;
+const black = 0b0000;
+
+const initialBoard = [
+    [rook | black, knight | black, bishop | black, queen | black, king | black, bishop | black, knight | black, rook | black],
+    [pawn | black, pawn | black, pawn | black, pawn | black, pawn | black, pawn | black, pawn | black, pawn | black],
+    [none, none, none, none, none, none, none, none],
+    [none, none, none, none, none, none, none, none],
+    [none, none, none, none, none, none, none, none],
+    [none, none, none, none, none, none, none, none],
+    [pawn | white, pawn| white, pawn | white, pawn | white, pawn | white, pawn | white, pawn | white, pawn | white],
+    [rook | white, knight | white, bishop | white, queen | white, king | white, bishop | white, knight | white, rook | white]
+];
+
+function initializeGameState() {
+    for (let row = 0; row < 8; row++) {
+        for (let col = 0; col < 8; col++) {
+            gamestate[63-row * 8 - col] = initialBoard[row][col];
+        }
+    }
+    gamestate[64] = 0b1111; // Castling bits
 }
 
-gamestate[64] = 0b1111;       //castling bits
+initializeGameState();
 
 //the numbering of the squares is going to happen this way
 // 63 62 61 60 59 58 57 56
@@ -47,7 +73,7 @@ function makeMove(move) {           //used to make a move on the actual board
 
     else {
         let startSquare = move & (0b111111);
-        let targetSquare = move & (0b111111000000);
+        let targetSquare = (move & (0b111111000000))>>6;
 
         let selectedPiece = gamestate[startSquare];
         let targetedPiece = gamestate[targetSquare];
@@ -127,7 +153,7 @@ function makeMove(move) {           //used to make a move on the actual board
         //------------------------------------------------------------------------------------------------------------------
 
         turn = 1 - turn;
-        displayBoard(gamestate);
+        console.log("turn after making move ",turn);      
 
 
 
@@ -150,7 +176,7 @@ function makeMove(move) {           //used to make a move on the actual board
 function makeTempMove(move, tempgameState) {
     // it checks a temporary gamestate by playing a temporary move on it, and then analysing on it 
     let startSquare = move & (0b111111);
-    let targetSquare = move & (0b111111000000);
+    let targetSquare = (move & (0b111111000000))>>6;
     tempgameState[targetSquare] = tempgameState[startSquare];
     tempgameState[startSquare] = 0b0000;
 
@@ -162,26 +188,27 @@ function makeTempMove(move, tempgameState) {
 function isMoveValid(move) {
 
     let startSquare = move & (0b111111);
-    let targetSquare = move & (0b111111000000);
+    let targetSquare = (move & (0b111111000000))>>6;
     let selectedPiece = gamestate[startSquare];
     let targetedPiece = gamestate[targetSquare];
     let piece = selectedPiece & (0b0111);
     let targetedColor = targetedPiece & (0b1000);
+    console.log("check",move,startSquare,targetSquare);
     //function to check the validity of a given move 
 
     //1) check if the turn is valid or not (startsquare should contain a piece of the same color as turn)
 
     if (selectedPiece === 0) return false;
     let selectedColor = selectedPiece & (0b1000);
-    if (selectedColor != turn) return false;
+    if ((selectedColor>>3) != turn) return false;
 
 
     //2) the target square should be empty, or occupied by opp's piece
 
     if (targetSquare != 0) {
-        if (targetedColor == turn) return false;
+        if ((targetedColor>>3) == turn) return false;
     }
-
+    console.log("reached here");
     //3) check for the correct movement of the selected piece
 
     let flag = false;
@@ -191,7 +218,7 @@ function isMoveValid(move) {
         case 0b001: //pawn
 
             if (turn == 1) { //white pawn
-
+                console.log(startSquare,targetSquare,gamestate[startSquare+8]);
                 if (startSquare + 8 === targetSquare) flag = true;    //moves 1 square ahead
                 else if (startSquare <= 15 && startSquare >= 8 && startSquare + 16 === targetSquare && gamestate[startSquare + 8] == 0) flag = true;        //moves 2 squares only on the first move (of itself) and ensures there is no piece one square ahead
                 else if ((startSquare + 1 * 8 + 1) === targetSquare && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally)
