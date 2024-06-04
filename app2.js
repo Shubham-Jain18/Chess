@@ -2,6 +2,11 @@ let gamestate = new Array(65);
 let movehistory = []        // i think it will be better to store the gamestates (history) rather than moves
 let turn = 1;
 
+//the following flags represent the file (column), on which a pawn just moved 2 squares ahead, and is vulnerable to getting captured due to en-passant on next move
+//enpwhite=0b010 shows that the white pawn on 3rd file (it's indexed 0) just moved 2 pawns ahead, and can be en-passanted on the next move 
+let enpwhite = 0b000;
+let enpblack = 0b000;
+
 //gamestate shows the current status of the board, storing the piece stored in each of the 64 squares (or if it is empty) in form of bits
 //a new 65th square is added to show the castling flag bits
 //set bit shows king can castle
@@ -44,41 +49,82 @@ function makeMove(move) {           //used to make a move on the actual board
         let startSquare = move & (0b111111);
         let targetSquare = move & (0b111111000000);
 
-        let selectedPiece=gamestate[startSquare];
+        let selectedPiece = gamestate[startSquare];
+        let targetedPiece = gamestate[targetSquare];
 
         movehistory.push(gamestate);            //adds the current (without the current move) is added to the history 
         gamestate[targetSquare] = gamestate[startSquare];
         gamestate[startSquare] = 0b0000;
 
-        if(startSquare===3 && targetSquare===1 && gamestate[64]& 0b1000 ){      //if this is a castling move, update the rook's position too
-            gamestate[0]=0b0000;
-            gamestate[2]=0b1010;
+        //--------------------------------------------------------------------------------------------------------------
+
+        //en passant section
+
+        if(selectedPiece===0b1001 && startSquare+1*8+1===targetSquare && targetedPiece===0b0000){       //if the white pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the black pawn off the board 
+            gamestate[targetSquare-1*8]===0b0000;
         }
 
-        else if(startSquare===3 && targetSquare===5 && gamestate[64]& 0b0100 ){
-            gamestate[7]=0b0000;
-            gamestate[4]=0b1010;
+        if(selectedPiece===0b1001 && startSquare+1*8-1===targetSquare && targetedPiece===0b0000){       //if the white pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the black pawn off the board 
+            gamestate[targetSquare-1*8]===0b0000;
         }
 
-        else if(startSquare===59 && targetSquare===57 && gamestate[64]& 0b0010 ){
-            gamestate[56]=0b0000;
-            gamestate[58]=0b0010;
+        if(selectedPiece===0b0001 && startSquare-1*8+1===targetSquare && targetedPiece===0b0000){       //if the black pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the white pawn off the board 
+            gamestate[targetSquare+1*8]===0b0000;
         }
 
-        else if(startSquare===59 && targetSquare===61 && gamestate[64]& 0b0010 ){
-            gamestate[63]=0b0000;
-            gamestate[60]=0b0010;
+        if(selectedPiece===0b0001 && startSquare-1*8-1===targetSquare && targetedPiece===0b0000){       //if the black pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the white pawn off the board 
+            gamestate[targetSquare+1*8]===0b0000;
         }
-        
+
+        if (selectedPiece === 0b1001 && startSquare + 2 * 8 === targetSquare) {      //if the white pawn moves 2 squares ahead, we need to update the en-passant status 
+            enpwhite = startSquare % 8;         //stores the column (file )
+        }
+
+        else if (selectedPiece === 0b0001 && startSquare - 2 * 8 === targetSquare) {      //if the black pawn moves 2 squares ahead, we need to update the en-passant status 
+            enpblack = startSquare % 8;         //stores the column (file )
+        }
+
+        else {
+            enpblack = 0b000;
+            enpwhite = 0b000;         //no enpassant possible on the next move
+        }
+
+        //-----------------------------------------------------------------------------------------------------------------
+
+        //castling section 
+
+
+        if (startSquare === 3 && targetSquare === 1 && gamestate[64] & 0b1000) {      //if this is a castling move, update the rook's position too
+            gamestate[0] = 0b0000;
+            gamestate[2] = 0b1010;
+        }
+
+        else if (startSquare === 3 && targetSquare === 5 && gamestate[64] & 0b0100) {
+            gamestate[7] = 0b0000;
+            gamestate[4] = 0b1010;
+        }
+
+        else if (startSquare === 59 && targetSquare === 57 && gamestate[64] & 0b0010) {
+            gamestate[56] = 0b0000;
+            gamestate[58] = 0b0010;
+        }
+
+        else if (startSquare === 59 && targetSquare === 61 && gamestate[64] & 0b0010) {
+            gamestate[63] = 0b0000;
+            gamestate[60] = 0b0010;
+        }
+
         //lets modify the castling bits too
 
-        if(gamestate[0]!=0b1010) gamestate[64] &= 0b0111;       //white kingside rook is not present on its square, means it must have moved!
-        if(gamestate[7]!=0b1010) gamestate[64] &= 0b1011;       //now for white queenside rook
-        if(gamestate[56]!=0b0010) gamestate[64] &= 0b1101;      //same for black rooks  
-        if(gamestate[63]!=0b1010) gamestate[64] &= 0b1110;
+        if (gamestate[0] != 0b1010) gamestate[64] &= 0b0111;       //white kingside rook is not present on its square, means it must have moved!
+        if (gamestate[7] != 0b1010) gamestate[64] &= 0b1011;       //now for white queenside rook
+        if (gamestate[56] != 0b0010) gamestate[64] &= 0b1101;      //same for black rooks  
+        if (gamestate[63] != 0b1010) gamestate[64] &= 0b1110;
 
-        if(gamestate[3]!=0b1110) gamestate[64] &= 0b0011;       //white king is not present on its square, means it must have moved!
-        if(gamestate[59]!=0b0110) gamestate[64] &= 0b1100;      //same for black king 
+        if (gamestate[3] != 0b1110) gamestate[64] &= 0b0011;       //white king is not present on its square, means it must have moved!
+        if (gamestate[59] != 0b0110) gamestate[64] &= 0b1100;      //same for black king 
+
+        //------------------------------------------------------------------------------------------------------------------
 
         turn = 1 - turn;
         displayBoard(gamestate);
@@ -148,11 +194,12 @@ function isMoveValid(move) {
 
                 if (startSquare + 8 === targetSquare) flag = true;    //moves 1 square ahead
                 else if (startSquare <= 15 && startSquare >= 8 && startSquare + 16 === targetSquare && gamestate[startSquare + 8] == 0) flag = true;        //moves 2 squares only on the first move (of itself) and ensures there is no piece one square ahead
-                else if ((startSquare + 1 * 8 + 1) === targetSquare && targetSquare >= 0 && targetSquare <= 63 && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally)
-                else if ((startSquare + 1 * 8 - 1) === targetSquare && targetSquare >= 0 && targetSquare <= 63 && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally)
+                else if ((startSquare + 1 * 8 + 1) === targetSquare && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally)
+                else if ((startSquare + 1 * 8 - 1) === targetSquare && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally)
+                else if ((startSquare + 1 * 8 + 1) === targetSquare && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare - 1 * 8] === 0b0001 && enpblack === (targetSquare % 8)) flag = true;      //enpassant capture by a white pawn
+                else if ((startSquare + 1 * 8 - 1) === targetSquare && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare - 1 * 8] === 0b0001 && enpblack === (targetSquare % 8)) flag = true;      //enpassant capture by a white pawn
 
-
-                //en-passant will be implemented later if needed
+                //edit: en-passant done !
 
             }
 
@@ -160,9 +207,13 @@ function isMoveValid(move) {
 
                 if (startSquare - 8 === targetSquare) flag = true;    //moves 1 square ahead
                 else if (startSquare <= 55 && startSquare >= 48 && startSquare - 16 === targetSquare && gamestate[startSquare - 8] == 0) flag = true;        //moves 2 squares only on the first move (of itself) and ensures there is no piece one square ahead
-                else if ((startSquare - 1 * 8 + 1) === targetSquare && targetSquare >= 0 && targetSquare <= 63 && gamestate[targetSquare] != 0b000 && targetedColor === 0b1000) flag = true;   //capture by a white pawn (diagonally)
-                else if ((startSquare - 1 * 8 - 1) === targetSquare && targetSquare >= 0 && targetSquare <= 63 && gamestate[targetSquare] != 0b000 && targetedColor === 0b1000) flag = true;   //capture by a black pawn (diagonally)
-                //en-passant will be implemented later if needed
+                else if ((startSquare - 1 * 8 + 1) === targetSquare && gamestate[targetSquare] != 0b000 && targetedColor === 0b1000) flag = true;   //capture by a white pawn (diagonally)
+                else if ((startSquare - 1 * 8 - 1) === targetSquare && gamestate[targetSquare] != 0b000 && targetedColor === 0b1000) flag = true;   //capture by a black pawn (diagonally)
+                else if ((startSquare - 1 * 8 + 1) === targetSquare && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare + 1 * 8] === 0b1001 && enpwhite === (targetSquare % 8)) flag = true;      //enpassant capture by a black pawn
+                else if ((startSquare - 1 * 8 - 1) === targetSquare && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare + 1 * 8] === 0b1001 && enpwhite === (targetSquare % 8)) flag = true;      //enpassant capture by a black pawn
+
+
+                //edit : en-passant done !
 
             }
 
@@ -290,64 +341,64 @@ function isMoveValid(move) {
 
             //time to implement castling 
 
-            else if (startSquare===3 && targetSquare===1){    //kingside castling for white 
-                let flagbit=gamestate[64] & 0b1000;
-                if(flagbit===0b1000){           //castling can happen
-                    let tempgameState1=gamestate;
-                    let tempgameState2=gamestate;
-                    tempgameState1[3]=0b0000;
-                    tempgameState1[1]=0b1110;
-                
-                    tempgameState2[3]=0b0000;
-                    tempgameState2[2]=0b1110;
+            else if (startSquare === 3 && targetSquare === 1) {    //kingside castling for white 
+                let flagbit = gamestate[64] & 0b1000;
+                if (flagbit === 0b1000) {           //castling can happen
+                    let tempgameState1 = gamestate;
+                    let tempgameState2 = gamestate;
+                    tempgameState1[3] = 0b0000;
+                    tempgameState1[1] = 0b1110;
 
-                    if(!check(tempgameState1) && !check(tempgameState2)) flag=true;        //this checks the king does not fall under any check on its catling path
+                    tempgameState2[3] = 0b0000;
+                    tempgameState2[2] = 0b1110;
+
+                    if (!check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
                 }
             }
 
 
-            else if (startSquare===3 && targetSquare===5){    //queenside castling for white 
-                let flagbit=gamestate[64] & 0b0100;
-                if(flagbit===0b1000){           //castling can happen
-                    let tempgameState1=gamestate;
-                    let tempgameState2=gamestate;
-                    tempgameState1[3]=0b0000;
-                    tempgameState1[5]=0b1110;
-                
-                    tempgameState2[3]=0b0000;
-                    tempgameState2[4]=0b1110;
+            else if (startSquare === 3 && targetSquare === 5) {    //queenside castling for white 
+                let flagbit = gamestate[64] & 0b0100;
+                if (flagbit === 0b1000) {           //castling can happen
+                    let tempgameState1 = gamestate;
+                    let tempgameState2 = gamestate;
+                    tempgameState1[3] = 0b0000;
+                    tempgameState1[5] = 0b1110;
 
-                    if(!check(tempgameState1) && !check(tempgameState2)) flag=true;        //this checks the king does not fall under any check on its catling path
+                    tempgameState2[3] = 0b0000;
+                    tempgameState2[4] = 0b1110;
+
+                    if (!check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
                 }
             }
 
-            else if (startSquare===59  && targetSquare===57){    //kingside castling for black
-                let flagbit=gamestate[64] & 0b0100;
-                if(flagbit===0b0010){           //castling can happen
-                    let tempgameState1=gamestate;
-                    let tempgameState2=gamestate;
-                    tempgameState1[59]=0b0000;
-                    tempgameState1[57]=0b0110;
-                
-                    tempgameState2[59]=0b000;
-                    tempgameState2[58]=0b0110;
+            else if (startSquare === 59 && targetSquare === 57) {    //kingside castling for black
+                let flagbit = gamestate[64] & 0b0100;
+                if (flagbit === 0b0010) {           //castling can happen
+                    let tempgameState1 = gamestate;
+                    let tempgameState2 = gamestate;
+                    tempgameState1[59] = 0b0000;
+                    tempgameState1[57] = 0b0110;
 
-                    if(!check(tempgameState1) && !check(tempgameState2)) flag=true;        //this checks the king does not fall under any check on its catling path
+                    tempgameState2[59] = 0b000;
+                    tempgameState2[58] = 0b0110;
+
+                    if (!check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
                 }
             }
 
-            else if (startSquare===59  && targetSquare===61){    //queenside castling for black
-                let flagbit=gamestate[64] & 0b0100;
-                if(flagbit===0b0001){           //castling can happen
-                    let tempgameState1=gamestate;
-                    let tempgameState2=gamestate;
-                    tempgameState1[59]=0b0000;
-                    tempgameState1[61]=0b0110;
-                
-                    tempgameState2[59]=0b000;
-                    tempgameState2[60]=0b0110;
+            else if (startSquare === 59 && targetSquare === 61) {    //queenside castling for black
+                let flagbit = gamestate[64] & 0b0100;
+                if (flagbit === 0b0001) {           //castling can happen
+                    let tempgameState1 = gamestate;
+                    let tempgameState2 = gamestate;
+                    tempgameState1[59] = 0b0000;
+                    tempgameState1[61] = 0b0110;
 
-                    if(!check(tempgameState1) && !check(tempgameState2)) flag=true;        //this checks the king does not fall under any check on its catling path
+                    tempgameState2[59] = 0b000;
+                    tempgameState2[60] = 0b0110;
+
+                    if (!check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
                 }
             }
 
@@ -545,12 +596,13 @@ function checkMate(gamestate) {
 
     let tempgameState;
 
-    for(let i=0;i<64;i++){              //traverse all the 64 squares of the board
-        for(let j=0;j<64;j++){
-            let tempMove=createMove(i,j);       //create a temp move for all possible combinations of start and target squares
-            tempgameState=gamestate;
-            makeTempMove(tempMove,tempgameState);   //play the temporary move on the board
-            if(!check(tempgameState)) return false;     //if the king ends up in non-check position, it is not a checkmate 
+    for (let i = 0; i < 64; i++) {              //traverse all the 64 squares of the board
+        for (let j = 0; j < 64; j++) {
+            let tempMove = createMove(i, j);       //create a temp move for all possible combinations of start and target squares
+            tempgameState = gamestate;
+            if (!isMoveValid(tempMove)) continue;        //if the move is invalid, move on
+            makeTempMove(tempMove, tempgameState);   //play the temporary move on the board
+            if (!check(tempgameState)) return false;     //if the king ends up in non-check position, it is not a checkmate 
         }
     }
 
@@ -560,8 +612,7 @@ function checkMate(gamestate) {
     // edit: the above point is ensured in the makeMove function 
 }
 
-let num = 0b1010;
-console.log(num);
+
 
 
 
