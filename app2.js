@@ -34,7 +34,7 @@ function createMove(startSquare, targetSquare) {
 }
 
 
-function makeMove(move) {
+function makeMove(move) {           //used to make a move on the actual board
     if (!isMoveValid(move)) {
         console.log("The given move is not valid !");
         return;
@@ -543,7 +543,21 @@ function checkMate(gamestate) {
     //if any gamestate results in non-check condition, return  false;
     //else return true;
 
+    let tempgameState;
+
+    for(let i=0;i<64;i++){              //traverse all the 64 squares of the board
+        for(let j=0;j<64;j++){
+            let tempMove=createMove(i,j);       //create a temp move for all possible combinations of start and target squares
+            tempgameState=gamestate;
+            makeTempMove(tempMove,tempgameState);   //play the temporary move on the board
+            if(!check(tempgameState)) return false;     //if the king ends up in non-check position, it is not a checkmate 
+        }
+    }
+
+    return true;
+
     //one important point i just thought is, to return true, the king must be in check position right now, else it is declared a stalemate!
+    // edit: the above point is ensured in the makeMove function 
 }
 
 let num = 0b1010;
