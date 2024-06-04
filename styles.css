@@ -299,3 +299,41 @@ h1 {
 .btn:hover {
     background-color: #1d6d43;
 }
+
+.chess-container {
+display: flex;
+justify-content: center;
+align-items: center;
+margin-top: 20px;
+}
+
+#chess-board {
+display: grid;
+grid-template-columns: repeat(8, 80px); /* Adjust size as needed */
+grid-template-rows: repeat(8, 80px);
+gap: 0;
+border: 2px solid #000;
+}
+
+.square {
+width: 80px;
+height: 80px;
+display: flex;
+justify-content: center;
+align-items: center;
+}
+
+.white-square {
+background-color: #f0d9b5;
+}
+
+.black-square {
+background-color: #b58863;
+}
+
+.piece {
+width: 80%; /* Adjust as needed */
+height: 80%;
+cursor: pointer;
+}
+  
