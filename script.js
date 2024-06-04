@@ -6,9 +6,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const profileDetails = document.getElementById('profile');
     const body = document.querySelector('body'),
     sidebar = body.querySelector('nav'),
-    toggle = body.querySelector(".toggle"),    
-    modeSwitch = body.querySelector(".toggle-switch"),
-    modeText = body.querySelector(".mode-text");
+    toggle = body.querySelector(".toggle");  
+    
     const backButton = document.getElementById('back-button');
 
     // Function to show game modes and hide play options
@@ -33,17 +32,18 @@ document.addEventListener('DOMContentLoaded', (event) => {
     toggle.addEventListener("click" , () =>{
         sidebar.classList.toggle("close");
     })
-    
-    modeSwitch.addEventListener("click" , () =>{
-        body.classList.toggle("dark");
+    // Open chess game page when a game mode is selected
+    const gameOptionButtons = document.querySelectorAll('.game-option');
+    gameOptionButtons.forEach(button => {
         
-        if(body.classList.contains("dark")){
-            modeText.innerText = "Light mode";
-        }else{
-            modeText.innerText = "Dark mode";
-            
-        }
+        button.addEventListener('click', () => {
+            console.log("button is getting clicked");
+            window.location = 'chess_game.html';
+        });
     });
+
+    
+    
 
     
 });
