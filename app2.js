@@ -1,11 +1,12 @@
-let gamestate = new Array(65);
+var gamestate = new Array(65);
+
 let movehistory = []        // i think it will be better to store the gamestates (history) rather than moves
 let turn = 1;
 
 //the following flags represent the file (column), on which a pawn just moved 2 squares ahead, and is vulnerable to getting captured due to en-passant on next move
 //enpwhite=0b010 shows that the white pawn on 3rd file (it's indexed 0) just moved 2 pawns ahead, and can be en-passanted on the next move 
-let enpwhite = 0b000;
-let enpblack = 0b000;
+var enpwhite = 0b000;
+var enpblack = 0b000;
 
 //gamestate shows the current status of the board, storing the piece stored in each of the 64 squares (or if it is empty) in form of bits
 //a new 65th square is added to show the castling flag bits
@@ -30,14 +31,14 @@ const initialBoard = [
     [none, none, none, none, none, none, none, none],
     [none, none, none, none, none, none, none, none],
     [none, none, none, none, none, none, none, none],
-    [pawn | white, pawn| white, pawn | white, pawn | white, pawn | white, pawn | white, pawn | white, pawn | white],
+    [pawn | white, pawn | white, pawn | white, pawn | white, pawn | white, pawn | white, pawn | white, pawn | white],
     [rook | white, knight | white, bishop | white, queen | white, king | white, bishop | white, knight | white, rook | white]
 ];
 
 function initializeGameState() {
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
-            gamestate[63-row * 8 - col] = initialBoard[row][col];
+            gamestate[63 - row * 8 - col] = initialBoard[row][col];
         }
     }
     gamestate[64] = 0b1111; // Castling bits
@@ -66,48 +67,75 @@ function createMove(startSquare, targetSquare) {
 
 
 function makeMove(move) {           //used to make a move on the actual board
-    if (!isMoveValid(move)) {
+    let startSquare = move & (0b111111);
+    let targetSquare = (move & (0b111111000000)) >> 6;
+    console.log(gamestate[startSquare]);
+    console.log(gamestate[targetSquare]);
+    let flag = isMoveValid(move);
+    console.log(gamestate[startSquare]);
+    console.log(gamestate[targetSquare]);
+    // console.log(flag);
+    if (!flag) {
         console.log("The given move is not valid !");
         return;
     }
 
     else {
+        // console.log("the move is being played!");
+        // console.log(gamestate);
+
         let startSquare = move & (0b111111);
-        let targetSquare = (move & (0b111111000000))>>6;
+        let targetSquare = (move & (0b111111000000)) >> 6;
+
+        // console.log(startSquare, targetSquare);
 
         let selectedPiece = gamestate[startSquare];
         let targetedPiece = gamestate[targetSquare];
+
+        // console.log(gamestate);
+        console.log(gamestate[startSquare]);
+        console.log(gamestate[targetSquare]);
 
         movehistory.push(gamestate);            //adds the current (without the current move) is added to the history 
         gamestate[targetSquare] = gamestate[startSquare];
         gamestate[startSquare] = 0b0000;
 
+
+
+        console.log(gamestate);
+        // console.log(gamestate[startSquare]);
+        // console.log(gamestate[targetSquare]);
+
+
         //--------------------------------------------------------------------------------------------------------------
 
         //en passant section
 
-        if(selectedPiece===0b1001 && startSquare+1*8+1===targetSquare && targetedPiece===0b0000){       //if the white pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the black pawn off the board 
-            gamestate[targetSquare-1*8]===0b0000;
+
+        if (selectedPiece === 0b1001 && startSquare + 1 * 8 + 1 === targetSquare && targetedPiece === 0b0000) {       //if the white pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the black pawn off the board 
+            gamestate[targetSquare - 1 * 8] = 0b0000;
         }
 
-        if(selectedPiece===0b1001 && startSquare+1*8-1===targetSquare && targetedPiece===0b0000){       //if the white pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the black pawn off the board 
-            gamestate[targetSquare-1*8]===0b0000;
+        if (selectedPiece === 0b1001 && startSquare + 1 * 8 - 1 === targetSquare && targetedPiece === 0b0000) {       //if the white pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the black pawn off the board 
+            gamestate[targetSquare - 1 * 8] = 0b0000;
         }
 
-        if(selectedPiece===0b0001 && startSquare-1*8+1===targetSquare && targetedPiece===0b0000){       //if the black pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the white pawn off the board 
-            gamestate[targetSquare+1*8]===0b0000;
+        if (selectedPiece === 0b0001 && startSquare - 1 * 8 + 1 === targetSquare && targetedPiece === 0b0000) {       //if the black pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the white pawn off the board 
+            gamestate[targetSquare + 1 * 8] = 0b0000;
         }
 
-        if(selectedPiece===0b0001 && startSquare-1*8-1===targetSquare && targetedPiece===0b0000){       //if the black pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the white pawn off the board 
-            gamestate[targetSquare+1*8]===0b0000;
+        if (selectedPiece === 0b0001 && startSquare - 1 * 8 - 1 === targetSquare && targetedPiece === 0b0000) {       //if the black pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the white pawn off the board 
+            gamestate[targetSquare + 1 * 8] = 0b0000;
         }
 
         if (selectedPiece === 0b1001 && startSquare + 2 * 8 === targetSquare) {      //if the white pawn moves 2 squares ahead, we need to update the en-passant status 
-            enpwhite = startSquare % 8;         //stores the column (file )
+            enpwhite = startSquare % 8;      //stores the column (file )
+            enpblack = 0b000;
         }
 
         else if (selectedPiece === 0b0001 && startSquare - 2 * 8 === targetSquare) {      //if the black pawn moves 2 squares ahead, we need to update the en-passant status 
             enpblack = startSquare % 8;         //stores the column (file )
+            enpwhite = 0b000;
         }
 
         else {
@@ -115,12 +143,14 @@ function makeMove(move) {           //used to make a move on the actual board
             enpwhite = 0b000;         //no enpassant possible on the next move
         }
 
+
         //-----------------------------------------------------------------------------------------------------------------
 
         //castling section 
 
 
         if (startSquare === 3 && targetSquare === 1 && gamestate[64] & 0b1000) {      //if this is a castling move, update the rook's position too
+            console.log("this has happened!");
             gamestate[0] = 0b0000;
             gamestate[2] = 0b1010;
         }
@@ -145,30 +175,42 @@ function makeMove(move) {           //used to make a move on the actual board
         if (gamestate[0] != 0b1010) gamestate[64] &= 0b0111;       //white kingside rook is not present on its square, means it must have moved!
         if (gamestate[7] != 0b1010) gamestate[64] &= 0b1011;       //now for white queenside rook
         if (gamestate[56] != 0b0010) gamestate[64] &= 0b1101;      //same for black rooks  
-        if (gamestate[63] != 0b1010) gamestate[64] &= 0b1110;
+        if (gamestate[63] != 0b0010) gamestate[64] &= 0b1110;
 
         if (gamestate[3] != 0b1110) gamestate[64] &= 0b0011;       //white king is not present on its square, means it must have moved!
         if (gamestate[59] != 0b0110) gamestate[64] &= 0b1100;      //same for black king 
 
         //------------------------------------------------------------------------------------------------------------------
+        // console.log("The move is played!");
+
+        console.log(gamestate);
 
         turn = 1 - turn;
-        console.log("turn after making move ",turn);      
+        console.log("turn after making move ", turn);
 
+        // let tanmay = gamestate;
+        // console.log(check(tanmay));
+
+        let caststate = gamestate[64];
+        console.log(caststate);
 
 
         if (checkMate(gamestate)) {
             if (check(gamestate)) {
-                console.log("CheckMate!");
+                console.log("CHECKMATE!");
             }
             else {
-                console.log("Stalemate!");
+                console.log("STALEMATE!");
             }
         }
 
         else if (check(gamestate)) {
             console.log("Check!");
         }
+
+
+        console.log("---------------------------------------------------------------");
+        console.log("\n");
     }
 }
 
@@ -176,7 +218,7 @@ function makeMove(move) {           //used to make a move on the actual board
 function makeTempMove(move, tempgameState) {
     // it checks a temporary gamestate by playing a temporary move on it, and then analysing on it 
     let startSquare = move & (0b111111);
-    let targetSquare = (move & (0b111111000000))>>6;
+    let targetSquare = (move & (0b111111000000)) >> 6;
     tempgameState[targetSquare] = tempgameState[startSquare];
     tempgameState[startSquare] = 0b0000;
 
@@ -188,27 +230,44 @@ function makeTempMove(move, tempgameState) {
 function isMoveValid(move) {
 
     let startSquare = move & (0b111111);
-    let targetSquare = (move & (0b111111000000))>>6;
+    let targetSquare = (move & (0b111111000000)) >> 6;
     let selectedPiece = gamestate[startSquare];
     let targetedPiece = gamestate[targetSquare];
     let piece = selectedPiece & (0b0111);
     let targetedColor = targetedPiece & (0b1000);
-    console.log("check",move,startSquare,targetSquare);
+    // console.log("check", move, startSquare, targetSquare);
     //function to check the validity of a given move 
 
     //1) check if the turn is valid or not (startsquare should contain a piece of the same color as turn)
 
     if (selectedPiece === 0) return false;
     let selectedColor = selectedPiece & (0b1000);
-    if ((selectedColor>>3) != turn) return false;
+    if ((selectedColor >> 3) != turn) return false;
+
+    // console.log("cleared step 1");
+    // console.log(gamestate[startSquare]);
+    // console.log(gamestate[targetSquare]);
+    // console.log(gamestate);
+
 
 
     //2) the target square should be empty, or occupied by opp's piece
 
-    if (targetSquare != 0) {
-        if ((targetedColor>>3) == turn) return false;
+    if (gamestate[targetSquare] != 0) {
+        if ((targetedColor >> 3) == turn) {
+            // console.log(targetSquare);
+            // console.log(targetedColor >> 3);
+            // console.log(turn);
+            // console.log("target square occupied by same piece color");
+            return false;
+        }
     }
-    console.log("reached here");
+    // console.log("cleared step 2");
+    // console.log(gamestate[startSquare]);
+    // console.log(gamestate[targetSquare]);
+    // console.log(gamestate);
+
+
     //3) check for the correct movement of the selected piece
 
     let flag = false;
@@ -218,13 +277,13 @@ function isMoveValid(move) {
         case 0b001: //pawn
 
             if (turn == 1) { //white pawn
-                console.log(startSquare,targetSquare,gamestate[startSquare+8]);
-                if (startSquare + 8 === targetSquare) flag = true;    //moves 1 square ahead
-                else if (startSquare <= 15 && startSquare >= 8 && startSquare + 16 === targetSquare && gamestate[startSquare + 8] == 0) flag = true;        //moves 2 squares only on the first move (of itself) and ensures there is no piece one square ahead
-                else if ((startSquare + 1 * 8 + 1) === targetSquare && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally)
-                else if ((startSquare + 1 * 8 - 1) === targetSquare && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally)
-                else if ((startSquare + 1 * 8 + 1) === targetSquare && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare - 1 * 8] === 0b0001 && enpblack === (targetSquare % 8)) flag = true;      //enpassant capture by a white pawn
-                else if ((startSquare + 1 * 8 - 1) === targetSquare && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare - 1 * 8] === 0b0001 && enpblack === (targetSquare % 8)) flag = true;      //enpassant capture by a white pawn
+                // console.log(startSquare, targetSquare, gamestate[startSquare + 8]);
+                if (startSquare + 8 === targetSquare && gamestate[targetSquare] === 0b0000) flag = true;    //moves 1 square ahead (the target square should be empty too)
+                else if (startSquare <= 15 && startSquare >= 8 && startSquare + 16 === targetSquare && gamestate[startSquare + 8] == 0 && gamestate[targetSquare] === 0b0000) flag = true;        //moves 2 squares only on the first move (of itself) and ensures there is no piece one square ahead
+                else if ((startSquare + 1 * 8 + 1) === targetSquare && (startSquare % 8) != 7 && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally), also ensuring it does not flank the board from file 1 to file 8
+                else if ((startSquare + 1 * 8 - 1) === targetSquare && (startSquare % 8) != 0 && gamestate[targetSquare] != 0b0000 && targetedColor === 0b0000) flag = true;   //capture by a white pawn (diagonally)
+                else if ((startSquare + 1 * 8 + 1) === targetSquare && (startSquare % 8) != 7 && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare - 1 * 8] === 0b0001 && enpblack === (targetSquare % 8)) flag = true;      //enpassant capture by a white pawn
+                else if ((startSquare + 1 * 8 - 1) === targetSquare && (startSquare % 8) != 0 && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare - 1 * 8] === 0b0001 && enpblack === (targetSquare % 8)) flag = true;      //enpassant capture by a white pawn
 
                 //edit: en-passant done !
 
@@ -232,12 +291,12 @@ function isMoveValid(move) {
 
             else {      //black pawn 
 
-                if (startSquare - 8 === targetSquare) flag = true;    //moves 1 square ahead
-                else if (startSquare <= 55 && startSquare >= 48 && startSquare - 16 === targetSquare && gamestate[startSquare - 8] == 0) flag = true;        //moves 2 squares only on the first move (of itself) and ensures there is no piece one square ahead
-                else if ((startSquare - 1 * 8 + 1) === targetSquare && gamestate[targetSquare] != 0b000 && targetedColor === 0b1000) flag = true;   //capture by a white pawn (diagonally)
-                else if ((startSquare - 1 * 8 - 1) === targetSquare && gamestate[targetSquare] != 0b000 && targetedColor === 0b1000) flag = true;   //capture by a black pawn (diagonally)
-                else if ((startSquare - 1 * 8 + 1) === targetSquare && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare + 1 * 8] === 0b1001 && enpwhite === (targetSquare % 8)) flag = true;      //enpassant capture by a black pawn
-                else if ((startSquare - 1 * 8 - 1) === targetSquare && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare + 1 * 8] === 0b1001 && enpwhite === (targetSquare % 8)) flag = true;      //enpassant capture by a black pawn
+                if (startSquare - 8 === targetSquare && gamestate[targetSquare] === 0b0000) flag = true;    //moves 1 square ahead
+                else if (startSquare <= 55 && startSquare >= 48 && startSquare - 16 === targetSquare && gamestate[startSquare - 8] == 0 && gamestate[targetSquare] === 0b0000) flag = true;        //moves 2 squares only on the first move (of itself) and ensures there is no piece one square ahead
+                else if ((startSquare - 1 * 8 + 1) === targetSquare && (startSquare % 8) != 7 && gamestate[targetSquare] != 0b000 && targetedColor === 0b1000) flag = true;   //capture by a white pawn (diagonally)
+                else if ((startSquare - 1 * 8 - 1) === targetSquare && (startSquare % 8) != 0 && gamestate[targetSquare] != 0b000 && targetedColor === 0b1000) flag = true;   //capture by a black pawn (diagonally)
+                else if ((startSquare - 1 * 8 + 1) === targetSquare && (startSquare % 8) != 7 && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare + 1 * 8] === 0b1001 && enpwhite === (targetSquare % 8)) flag = true;      //enpassant capture by a black pawn
+                else if ((startSquare - 1 * 8 - 1) === targetSquare && (startSquare % 8) != 0 && gamestate[targetSquare] === 0b0000 && gamestate[targetSquare + 1 * 8] === 0b1001 && enpwhite === (targetSquare % 8)) flag = true;      //enpassant capture by a black pawn
 
 
                 //edit : en-passant done !
@@ -371,8 +430,8 @@ function isMoveValid(move) {
             else if (startSquare === 3 && targetSquare === 1) {    //kingside castling for white 
                 let flagbit = gamestate[64] & 0b1000;
                 if (flagbit === 0b1000) {           //castling can happen
-                    let tempgameState1 = gamestate;
-                    let tempgameState2 = gamestate;
+                    let tempgameState1 = deepCopy(gamestate);
+                    let tempgameState2 = deepCopy(gamestate);
                     tempgameState1[3] = 0b0000;
                     tempgameState1[1] = 0b1110;
 
@@ -386,9 +445,9 @@ function isMoveValid(move) {
 
             else if (startSquare === 3 && targetSquare === 5) {    //queenside castling for white 
                 let flagbit = gamestate[64] & 0b0100;
-                if (flagbit === 0b1000) {           //castling can happen
-                    let tempgameState1 = gamestate;
-                    let tempgameState2 = gamestate;
+                if (flagbit === 0b0100) {           //castling can happen
+                    let tempgameState1 = deepCopy(gamestate);
+                    let tempgameState2 = deepCopy(gamestate);
                     tempgameState1[3] = 0b0000;
                     tempgameState1[5] = 0b1110;
 
@@ -400,10 +459,10 @@ function isMoveValid(move) {
             }
 
             else if (startSquare === 59 && targetSquare === 57) {    //kingside castling for black
-                let flagbit = gamestate[64] & 0b0100;
+                let flagbit = gamestate[64] & 0b0010;
                 if (flagbit === 0b0010) {           //castling can happen
-                    let tempgameState1 = gamestate;
-                    let tempgameState2 = gamestate;
+                    let tempgameState1 = deepCopy(gamestate);
+                    let tempgameState2 = deepCopy(gamestate);
                     tempgameState1[59] = 0b0000;
                     tempgameState1[57] = 0b0110;
 
@@ -415,10 +474,10 @@ function isMoveValid(move) {
             }
 
             else if (startSquare === 59 && targetSquare === 61) {    //queenside castling for black
-                let flagbit = gamestate[64] & 0b0100;
+                let flagbit = gamestate[64] & 0b001;
                 if (flagbit === 0b0001) {           //castling can happen
-                    let tempgameState1 = gamestate;
-                    let tempgameState2 = gamestate;
+                    let tempgameState1 = deepCopy(gamestate);
+                    let tempgameState2 = deepCopy(gamestate);
                     tempgameState1[59] = 0b0000;
                     tempgameState1[61] = 0b0110;
 
@@ -437,12 +496,27 @@ function isMoveValid(move) {
 
     if (flag === false) return false;
 
+    // console.log("cleared step 3");
+    // console.log(gamestate[startSquare]);
+    // console.log(gamestate[targetSquare]);
+    // console.log(gamestate);
+
+
     //4) after the move is played, the king of the current turn should not be in check
 
-    let tempstate = gamestate;
+    let tempstate = deepCopy(gamestate);
     tempstate = (makeTempMove(move, tempstate));
+    // console.log(check(tempstate));
+
     if (check(tempstate)) return false;          //the current turn's king ends up in a check after this move is played
 
+
+    // console.log("cleared step 4");
+    // console.log(gamestate[startSquare]);
+    // console.log(gamestate[targetSquare]);
+    // console.log(gamestate);
+
+    // console.log("the move turns out to be a valid one ");
     return true;
 
 }
@@ -456,11 +530,13 @@ function check(tempstate) {
     for (let i = 0; i < 64; i++) {
         let x = tempstate[i] & (0b1000);
         let y = tempstate[i] & (0b0111);
-        if (x === turn && y === 0b0110) {
+        if (x === (turn << 3) && y === 0b0110) {
             kingSquare = i;
             break;
         }
     }
+
+    // console.log("king square of the current turn: ", kingSquare);
 
 
     if (turn === 1) {       //for a white king 
@@ -626,10 +702,15 @@ function checkMate(gamestate) {
     for (let i = 0; i < 64; i++) {              //traverse all the 64 squares of the board
         for (let j = 0; j < 64; j++) {
             let tempMove = createMove(i, j);       //create a temp move for all possible combinations of start and target squares
-            tempgameState = gamestate;
+            tempgameState = deepCopy(gamestate);
+            // console.log(tempMove, i, j);
             if (!isMoveValid(tempMove)) continue;        //if the move is invalid, move on
             makeTempMove(tempMove, tempgameState);   //play the temporary move on the board
-            if (!check(tempgameState)) return false;     //if the king ends up in non-check position, it is not a checkmate 
+            if (!check(tempgameState))      //if the king ends up in non-check position, it is not a checkmate 
+            {
+                // console.log("No checkmate!");
+                return false;
+            }
         }
     }
 
@@ -638,6 +719,20 @@ function checkMate(gamestate) {
     //one important point i just thought is, to return true, the king must be in check position right now, else it is declared a stalemate!
     // edit: the above point is ensured in the makeMove function 
 }
+
+function deepCopy(obj) {
+    return JSON.parse(JSON.stringify(obj));
+}
+
+console.log(gamestate);
+let caststate = gamestate[64];
+console.log(caststate);
+// console.log(enpwhite.toString(2));
+// console.log(enpblack.toString(2));
+// console.log(11 % 8);
+// let gu = checkMate(gamestate);
+// console.log(gu);
+
 
 
 
