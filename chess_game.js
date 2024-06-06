@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const chessBoard = document.getElementById('chess-board');
   const boardSize = 8;
   let selectedPiece = null;
+  const moveList = document.getElementById('moves-list');
 
   const none = 0b0000;
   const pawn = 0b0001;
@@ -13,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const white = 0b1000;
   const black = 0b0000;
-
 
   const pieceImages = {
     [rook | black]: 'media/Chess_rdt60.png',
@@ -61,9 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const clickedSquare = event.currentTarget;
     const clickedPiece = clickedSquare.querySelector('.piece');
 
-    // console.log(clickedSquare);
-    // console.log(clickedPiece);
-
     if (selectedPiece) {
       const startRow = parseInt(selectedPiece.dataset.row);
       const startCol = parseInt(selectedPiece.dataset.col);
@@ -72,42 +69,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const startSquare = boardSize * boardSize - 1 - startRow * boardSize - startCol;
       const targetSquare = boardSize * boardSize - 1 - targetRow * boardSize - targetCol;
-      console.log("startsquare = ", startSquare, ", targetsquare = ", targetSquare);
-      const move = createMove(startSquare, targetSquare);
-      console.log("move = ", move.toString(2));
-      // console.log(isMoveValid(move));
-      // let flag = isMoveValid(move);
-      // console.log(flag);
-      // if (flag) {
-      //   makeMove(move);
-      //   updateBoard();
-      // }
-      // else {
-      //   console.log("Invalid move");
-      // }
 
+      const move = createMove(startSquare, targetSquare);
       makeMove(move);
       updateBoard();
       selectedPiece = null;
     }
+
     else if (clickedPiece) {
       const pieceCode = parseInt(clickedPiece.dataset.piece);
       const pieceColor = pieceCode & 0b1000;
 
-      // Check if the selected piece belongs to the current player
       if ((turn === 1 && pieceColor === white) || (turn === 0 && pieceColor === black)) {
         selectedPiece = clickedPiece;
       }
     }
   }
 
+
+
+  function undoMove() {
+
+    if (gameStateHistory.length > 1) {
+      gameStateHistory.pop();
+      let takes = gameStateHistory[gameStateHistory.length - 1];
+      gamestate = deepCopy(takes);
+      updateBoard();
+
+      for (let i = 0; i < moveHistory.length; i++) {
+        console.log(moveHistory[i]);
+      }
+      console.log("this is happening ");
+      moveHistory.pop();
+      console.log("this is happening ");
+      updateMoveHistory();
+      console.log("this is happening ");
+
+      switchTurn();
+    }
+  }
+
+  document.getElementById('undo-button').addEventListener('click', undoMove);
+
   function updateBoard() {
     initializeBoard();
+    // for (let i = 0; i < gameStateHistory.length; i++) {
+    //   console.log(gameStateHistory[i]);
+    // }
+    // console.log("---------------------------------------");
   }
 
 
   initializeBoard();
+  startGame();
 });
-
-
-
