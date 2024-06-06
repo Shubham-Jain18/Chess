@@ -1,7 +1,17 @@
 var gamestate = new Array(65);
 
-let movehistory = []        // i think it will be better to store the gamestates (history) rather than moves
+let gameStateHistory = []        // i think it will be better to store the gamestates (history) rather than moves
+let moveHistory = []        //since i need to show the moves too, i think it is fine to have this too
 let turn = 1;
+
+
+const blackClock = document.getElementById('black-clock');
+const whiteClock = document.getElementById('white-clock');
+let blackTime = 600; // 10 minutes in seconds
+let whiteTime = 600; // 10 minutes in seconds
+let timerInterval;
+
+
 
 //the following flags represent the file (column), on which a pawn just moved 2 squares ahead, and is vulnerable to getting captured due to en-passant on next move
 //enpwhite=0b010 shows that the white pawn on 3rd file (it's indexed 0) just moved 2 pawns ahead, and can be en-passanted on the next move 
@@ -44,7 +54,11 @@ function initializeGameState() {
     gamestate[64] = 0b1111; // Castling bits
 }
 
+
 initializeGameState();
+
+let copy = deepCopy(gamestate);
+gameStateHistory.push(copy);
 
 //the numbering of the squares is going to happen this way
 // 63 62 61 60 59 58 57 56
@@ -69,43 +83,28 @@ function createMove(startSquare, targetSquare) {
 function makeMove(move) {           //used to make a move on the actual board
     let startSquare = move & (0b111111);
     let targetSquare = (move & (0b111111000000)) >> 6;
-    console.log(gamestate[startSquare]);
-    console.log(gamestate[targetSquare]);
+    console.log("Starting square: ", startSquare);
+    console.log("Target square: ", targetSquare);
     let flag = isMoveValid(move);
-    console.log(gamestate[startSquare]);
-    console.log(gamestate[targetSquare]);
-    // console.log(flag);
     if (!flag) {
         console.log("The given move is not valid !");
         return;
     }
 
     else {
-        // console.log("the move is being played!");
-        // console.log(gamestate);
+
+        addMove(move);      //add the move to the move history
 
         let startSquare = move & (0b111111);
         let targetSquare = (move & (0b111111000000)) >> 6;
 
-        // console.log(startSquare, targetSquare);
-
         let selectedPiece = gamestate[startSquare];
         let targetedPiece = gamestate[targetSquare];
 
-        // console.log(gamestate);
-        console.log(gamestate[startSquare]);
-        console.log(gamestate[targetSquare]);
 
-        movehistory.push(gamestate);            //adds the current (without the current move) is added to the history 
+
         gamestate[targetSquare] = gamestate[startSquare];
         gamestate[startSquare] = 0b0000;
-
-
-
-        console.log(gamestate);
-        // console.log(gamestate[startSquare]);
-        // console.log(gamestate[targetSquare]);
-
 
         //--------------------------------------------------------------------------------------------------------------
 
@@ -181,27 +180,24 @@ function makeMove(move) {           //used to make a move on the actual board
         if (gamestate[59] != 0b0110) gamestate[64] &= 0b1100;      //same for black king 
 
         //------------------------------------------------------------------------------------------------------------------
-        // console.log("The move is played!");
 
-        console.log(gamestate);
 
-        turn = 1 - turn;
+
+        let copy = deepCopy(gamestate);
+
+        gameStateHistory.push(copy);
+        switchTurn();
         console.log("turn after making move ", turn);
 
-        // let tanmay = gamestate;
-        // console.log(check(tanmay));
-
-        let caststate = gamestate[64];
-        console.log(caststate);
-
-
         if (checkMate(gamestate)) {
-            if (check(gamestate)) {
-                console.log("CHECKMATE!");
-            }
-            else {
-                console.log("STALEMATE!");
-            }
+            // if (check(gamestate)) {
+            //     console.log("CHECKMATE!");
+            // }
+            // else {
+            //     console.log("STALEMATE!");
+            // }
+
+            endGame();
         }
 
         else if (check(gamestate)) {
@@ -235,7 +231,6 @@ function isMoveValid(move) {
     let targetedPiece = gamestate[targetSquare];
     let piece = selectedPiece & (0b0111);
     let targetedColor = targetedPiece & (0b1000);
-    // console.log("check", move, startSquare, targetSquare);
     //function to check the validity of a given move 
 
     //1) check if the turn is valid or not (startsquare should contain a piece of the same color as turn)
@@ -244,10 +239,6 @@ function isMoveValid(move) {
     let selectedColor = selectedPiece & (0b1000);
     if ((selectedColor >> 3) != turn) return false;
 
-    // console.log("cleared step 1");
-    // console.log(gamestate[startSquare]);
-    // console.log(gamestate[targetSquare]);
-    // console.log(gamestate);
 
 
 
@@ -255,17 +246,9 @@ function isMoveValid(move) {
 
     if (gamestate[targetSquare] != 0) {
         if ((targetedColor >> 3) == turn) {
-            // console.log(targetSquare);
-            // console.log(targetedColor >> 3);
-            // console.log(turn);
-            // console.log("target square occupied by same piece color");
             return false;
         }
     }
-    // console.log("cleared step 2");
-    // console.log(gamestate[startSquare]);
-    // console.log(gamestate[targetSquare]);
-    // console.log(gamestate);
 
 
     //3) check for the correct movement of the selected piece
@@ -308,14 +291,16 @@ function isMoveValid(move) {
 
         case 0b011: //knight
 
-            if (startSquare + 2 * 8 + 1 === targetSquare) flag = true;
-            else if (startSquare + 2 * 8 - 1 === targetSquare) flag = true;
-            else if (startSquare + 1 * 8 + 2 === targetSquare) flag = true;
-            else if (startSquare + 1 * 8 - 2 === targetSquare) flag = true;
-            else if (startSquare - 2 * 8 + 1 === targetSquare) flag = true;
-            else if (startSquare - 2 * 8 - 1 === targetSquare) flag = true;
-            else if (startSquare - 1 * 8 + 2 === targetSquare) flag = true;
-            else if (startSquare - 1 * 8 - 2 === targetSquare) flag = true;
+            //we also need to ensure that the knight does not flank across the board
+
+            if (startSquare + 2 * 8 + 1 === targetSquare && (startSquare % 8 + 1) === (targetSquare % 8)) flag = true;
+            else if (startSquare + 2 * 8 - 1 === targetSquare && (startSquare % 8 - 1) === (targetSquare % 8)) flag = true;
+            else if (startSquare + 1 * 8 + 2 === targetSquare && (startSquare % 8 + 2) === (targetSquare % 8)) flag = true;
+            else if (startSquare + 1 * 8 - 2 === targetSquare && (startSquare % 8 - 2) === (targetSquare % 8)) flag = true;
+            else if (startSquare - 2 * 8 + 1 === targetSquare && (startSquare % 8 + 1) === (targetSquare % 8)) flag = true;
+            else if (startSquare - 2 * 8 - 1 === targetSquare && (startSquare % 8 - 1) === (targetSquare % 8)) flag = true;
+            else if (startSquare - 1 * 8 + 2 === targetSquare && (startSquare % 8 + 2) === (targetSquare % 8)) flag = true;
+            else if (startSquare - 1 * 8 - 2 === targetSquare && (startSquare % 8 - 2) === (targetSquare % 8)) flag = true;
 
             else return false;
 
@@ -324,22 +309,22 @@ function isMoveValid(move) {
         case 0b100: //bishop
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare + i * 8 + i === targetSquare) flag = true;
+                if (startSquare + i * 8 + i === targetSquare && (startSquare % 8 + i) === (targetSquare % 8)) flag = true;
                 if ((startSquare + i * 8 + i) >= 0 && (startSquare + i * 8 + i) <= 63 && gamestate[startSquare + i * 8 + i] != 0) break;
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare + i * 8 - i === targetSquare) flag = true;
+                if (startSquare + i * 8 - i === targetSquare && (startSquare % 8 - i) === (targetSquare % 8)) flag = true;
                 if ((startSquare + i * 8 - i) >= 0 && (startSquare + i * 8 - i) <= 63 && gamestate[startSquare + i * 8 - i] != 0) break;
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare - i * 8 + i === targetSquare) flag = true;
+                if (startSquare - i * 8 + i === targetSquare && (startSquare % 8 + i) === (targetSquare % 8)) flag = true;
                 if ((startSquare - i * 8 + i) >= 0 && (startSquare - i * 8 + i) <= 63 && gamestate[startSquare - i * 8 + i] != 0) break;
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare - i * 8 - i === targetSquare) flag = true;
+                if (startSquare - i * 8 - i === targetSquare && (startSquare % 8 - i) === (targetSquare % 8)) flag = true;
                 if ((startSquare - i * 8 - i) >= 0 && (startSquare - i * 8 - i) <= 63 && gamestate[startSquare - i * 8 - i] != 0) break;
             }
 
@@ -358,12 +343,12 @@ function isMoveValid(move) {
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare + i === targetSquare) flag = true;
+                if (startSquare + i === targetSquare && (startSquare % 8 + i) === targetSquare % 8) flag = true;      //ensure rook stays in the same rank(row)
                 if ((startSquare + i) >= 0 && (startSquare + i) <= 63 && gamestate[startSquare + i] != 0) break;
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare - i === targetSquare) flag = true;
+                if (startSquare - i === targetSquare && (startSquare % 8 - i) === targetSquare % 8) flag = true;
                 if ((startSquare - i) >= 0 && (startSquare - i) <= 63 && gamestate[startSquare - i] != 0) break;
             }
 
@@ -372,22 +357,22 @@ function isMoveValid(move) {
         case 0b101: //queen
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare + i * 8 + i === targetSquare) flag = true;
+                if (startSquare + i * 8 + i === targetSquare && (startSquare % 8 + i) === (targetSquare % 8)) flag = true;
                 if ((startSquare + i * 8 + i) >= 0 && (startSquare + i * 8 + i) <= 63 && gamestate[startSquare + i * 8 + i] != 0) break;
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare + i * 8 - i === targetSquare) flag = true;
+                if (startSquare + i * 8 - i === targetSquare && (startSquare % 8 - i) === (targetSquare % 8)) flag = true;
                 if ((startSquare + i * 8 - i) >= 0 && (startSquare + i * 8 - i) <= 63 && gamestate[startSquare + i * 8 - i] != 0) break;
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare - i * 8 + i === targetSquare) flag = true;
+                if (startSquare - i * 8 + i === targetSquare && (startSquare % 8 + i) === (targetSquare % 8)) flag = true;
                 if ((startSquare - i * 8 + i) >= 0 && (startSquare - i * 8 + i) <= 63 && gamestate[startSquare - i * 8 + i] != 0) break;
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare - i * 8 - i === targetSquare) flag = true;
+                if (startSquare - i * 8 - i === targetSquare && (startSquare % 8 - i) === (targetSquare % 8)) flag = true;
                 if ((startSquare - i * 8 - i) >= 0 && (startSquare - i * 8 - i) <= 63 && gamestate[startSquare - i * 8 - i] != 0) break;
             }
 
@@ -402,12 +387,12 @@ function isMoveValid(move) {
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare + i === targetSquare) flag = true;
+                if (startSquare + i === targetSquare && (startSquare % 8 + i) === targetSquare % 8) flag = true;     //ensure the queen stays in the same row (rank)
                 if ((startSquare + i) >= 0 && (startSquare + i) <= 63 && gamestate[startSquare + i] != 0) break;
             }
 
             for (let i = 1; i < 8; i++) {
-                if (startSquare - i === targetSquare) flag = true;
+                if (startSquare - i === targetSquare && (startSquare % 8 - i) === targetSquare % 8) flag = true;     //ensure the queen stays in the same row (rank)
                 if ((startSquare - i) >= 0 && (startSquare - i) <= 63 && gamestate[startSquare - i] != 0) break;
             }
 
@@ -417,13 +402,13 @@ function isMoveValid(move) {
         case 0b110: //king
 
             if (startSquare + 1 === targetSquare) flag = true;
-            else if (startSquare - 1 === targetSquare) flag = true;
+            else if (startSquare - 1 === targetSquare && (startSquare % 8 - 1) === (targetSquare % 8)) flag = true;
             else if (startSquare - 1 * 8 === targetSquare) flag = true;
             else if (startSquare + 1 * 8 === targetSquare) flag = true;
-            else if (startSquare + 1 * 8 + 1 === targetSquare) flag = true;
-            else if (startSquare + 1 * 8 - 1 === targetSquare) flag = true;
-            else if (startSquare - 1 * 8 - 1 === targetSquare) flag = true;
-            else if (startSquare - 1 * 8 + 1 === targetSquare) flag = true;
+            else if (startSquare + 1 * 8 + 1 === targetSquare && (startSquare % 8 + 1) === (targetSquare % 8)) flag = true;
+            else if (startSquare + 1 * 8 - 1 === targetSquare && (startSquare % 8 - 1) === (targetSquare % 8)) flag = true;
+            else if (startSquare - 1 * 8 - 1 === targetSquare && (startSquare % 8 - 1) === (targetSquare % 8)) flag = true;
+            else if (startSquare - 1 * 8 + 1 === targetSquare && (startSquare % 8 + 1) === (targetSquare % 8)) flag = true;
 
             //time to implement castling 
 
@@ -438,7 +423,7 @@ function isMoveValid(move) {
                     tempgameState2[3] = 0b0000;
                     tempgameState2[2] = 0b1110;
 
-                    if (!check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
+                    if (!check(gamestate) && !check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
                 }
             }
 
@@ -454,7 +439,7 @@ function isMoveValid(move) {
                     tempgameState2[3] = 0b0000;
                     tempgameState2[4] = 0b1110;
 
-                    if (!check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
+                    if (!check(gamestate) && !check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
                 }
             }
 
@@ -469,7 +454,7 @@ function isMoveValid(move) {
                     tempgameState2[59] = 0b000;
                     tempgameState2[58] = 0b0110;
 
-                    if (!check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
+                    if (!check(gamestate) && !check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
                 }
             }
 
@@ -484,7 +469,7 @@ function isMoveValid(move) {
                     tempgameState2[59] = 0b000;
                     tempgameState2[60] = 0b0110;
 
-                    if (!check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its catling path
+                    if (!check(gamestate) && !check(tempgameState1) && !check(tempgameState2)) flag = true;        //this checks the king does not fall under any check on its castling path
                 }
             }
 
@@ -496,25 +481,12 @@ function isMoveValid(move) {
 
     if (flag === false) return false;
 
-    // console.log("cleared step 3");
-    // console.log(gamestate[startSquare]);
-    // console.log(gamestate[targetSquare]);
-    // console.log(gamestate);
-
-
     //4) after the move is played, the king of the current turn should not be in check
 
     let tempstate = deepCopy(gamestate);
     tempstate = (makeTempMove(move, tempstate));
-    // console.log(check(tempstate));
 
     if (check(tempstate)) return false;          //the current turn's king ends up in a check after this move is played
-
-
-    // console.log("cleared step 4");
-    // console.log(gamestate[startSquare]);
-    // console.log(gamestate[targetSquare]);
-    // console.log(gamestate);
 
     // console.log("the move turns out to be a valid one ");
     return true;
@@ -540,38 +512,38 @@ function check(tempstate) {
 
 
     if (turn === 1) {       //for a white king 
-        if ((kingSquare + 1 * 8 + 1) >= 0 && (kingSquare + 1 * 8 + 1) <= 63 && tempstate[kingSquare + 1 * 8 + 1] === 0b0001) return true;  //check by black pawn
-        if ((kingSquare + 1 * 8 - 1) >= 0 && (kingSquare + 1 * 8 - 1) <= 63 && tempstate[kingSquare + 1 * 8 - 1] === 0b0001) return true;
-        if ((kingSquare + 1 * 8 + 2) >= 0 && (kingSquare + 1 * 8 + 2) <= 63 && tempstate[kingSquare + 1 * 8 + 2] === 0b0011) return true;   //check by black knight
-        if ((kingSquare + 1 * 8 - 2) >= 0 && (kingSquare + 1 * 8 - 2) <= 63 && tempstate[kingSquare + 1 * 8 - 2] === 0b0011) return true;
-        if ((kingSquare - 1 * 8 - 2) >= 0 && (kingSquare - 1 * 8 - 2) <= 63 && tempstate[kingSquare - 1 * 8 - 2] === 0b0011) return true;
-        if ((kingSquare - 1 * 8 + 2) >= 0 && (kingSquare - 1 * 8 + 2) <= 63 && tempstate[kingSquare - 1 * 8 + 2] === 0b0011) return true;
-        if ((kingSquare - 2 * 8 + 1) >= 0 && (kingSquare - 2 * 8 + 1) <= 63 && tempstate[kingSquare - 2 * 8 + 1] === 0b0011) return true;
-        if ((kingSquare - 2 * 8 - 1) >= 0 && (kingSquare - 2 * 8 - 1) <= 63 && tempstate[kingSquare - 2 * 8 - 1] === 0b0011) return true;
-        if ((kingSquare + 2 * 8 - 1) >= 0 && (kingSquare + 2 * 8 - 1) <= 63 && tempstate[kingSquare + 2 * 8 - 1] === 0b0011) return true;
-        if ((kingSquare + 2 * 8 + 1) >= 0 && (kingSquare + 2 * 8 + 1) <= 63 && tempstate[kingSquare + 2 * 8 + 1] === 0b0011) return true;
+        if ((kingSquare + 1 * 8 + 1) >= 0 && (kingSquare + 1 * 8 + 1) <= 63 && tempstate[kingSquare + 1 * 8 + 1] === 0b0001 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;  //check by black pawn
+        if ((kingSquare + 1 * 8 - 1) >= 0 && (kingSquare + 1 * 8 - 1) <= 63 && tempstate[kingSquare + 1 * 8 - 1] === 0b0001 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;
+        if ((kingSquare + 1 * 8 + 2) >= 0 && (kingSquare + 1 * 8 + 2) <= 63 && tempstate[kingSquare + 1 * 8 + 2] === 0b0011 && (kingSquare % 8 + 2) === (kingSquare + 2) % 8) return true;   //check by black knight
+        if ((kingSquare + 1 * 8 - 2) >= 0 && (kingSquare + 1 * 8 - 2) <= 63 && tempstate[kingSquare + 1 * 8 - 2] === 0b0011 && (kingSquare % 8 - 2) === (kingSquare - 2) % 8) return true;
+        if ((kingSquare - 1 * 8 - 2) >= 0 && (kingSquare - 1 * 8 - 2) <= 63 && tempstate[kingSquare - 1 * 8 - 2] === 0b0011 && (kingSquare % 8 - 2) === (kingSquare - 2) % 8) return true;
+        if ((kingSquare - 1 * 8 + 2) >= 0 && (kingSquare - 1 * 8 + 2) <= 63 && tempstate[kingSquare - 1 * 8 + 2] === 0b0011 && (kingSquare % 8 + 2) === (kingSquare + 2) % 8) return true;
+        if ((kingSquare - 2 * 8 + 1) >= 0 && (kingSquare - 2 * 8 + 1) <= 63 && tempstate[kingSquare - 2 * 8 + 1] === 0b0011 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;
+        if ((kingSquare - 2 * 8 - 1) >= 0 && (kingSquare - 2 * 8 - 1) <= 63 && tempstate[kingSquare - 2 * 8 - 1] === 0b0011 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;
+        if ((kingSquare + 2 * 8 - 1) >= 0 && (kingSquare + 2 * 8 - 1) <= 63 && tempstate[kingSquare + 2 * 8 - 1] === 0b0011 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;
+        if ((kingSquare + 2 * 8 + 1) >= 0 && (kingSquare + 2 * 8 + 1) <= 63 && tempstate[kingSquare + 2 * 8 + 1] === 0b0011 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] === 0b0100) return true;  //check by black bishop
-            else if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] === 0b0101) return true; //check by black queen
+            if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] === 0b0100 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true;  //check by black bishop
+            else if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] === 0b0101 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true; //check by black queen
             else if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] != 0b0000) break;     //a piece interuppts the diagonal
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] === 0b0100) return true;  //check by black bishop
-            else if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] === 0b0101) return true; //check by black queen
+            if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] === 0b0100 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true;  //check by black bishop
+            else if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] === 0b0101 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true; //check by black queen
             else if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] != 0b0000) break;     //a piece interuppts the diagonal
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] === 0b0100) return true;  //check by black bishop
-            else if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] === 0b0101) return true; //check by black queen
+            if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] === 0b0100 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true;  //check by black bishop
+            else if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] === 0b0101 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true; //check by black queen
             else if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] != 0b0000) break;     //a piece interuppts the diagonal
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] === 0b0100) return true;  //check by black bishop
-            else if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] === 0b0101) return true; //check by black queen
+            if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] === 0b0100 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true;  //check by black bishop
+            else if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] === 0b0101 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true; //check by black queen
             else if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] != 0b0000) break;     //a piece interuppts the diagonal
         }
 
@@ -588,25 +560,25 @@ function check(tempstate) {
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] === 0b0010) return true;  //check by black rook
-            else if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] === 0b0101) return true; //check by black queen
+            if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] === 0b0010 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true;  //check by black rook
+            else if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] === 0b0101 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true; //check by black queen
             else if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] != 0b0000) break;     //a piece interuppts the row(rank)/column(file)
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] === 0b0010) return true;  //check by black rook
-            else if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] === 0b0101) return true; //check by black queen
+            if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] === 0b0010 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true;  //check by black rook
+            else if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] === 0b0101 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true; //check by black queen
             else if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] != 0b0000) break;     //a piece interuppts the row(rank)/column(file)
         }
 
         if ((kingSquare + 1 * 8) >= 0 && (kingSquare + 1 * 8) <= 63 && tempstate[kingSquare + 1 * 8] === 0b0110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
         if ((kingSquare - 1 * 8) >= 0 && (kingSquare - 1 * 8) <= 63 && tempstate[kingSquare - 1 * 8] === 0b0110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare - 1 * 8 + 1) >= 0 && (kingSquare - 1 * 8 + 1) <= 63 && tempstate[kingSquare - 1 * 8 + 1] === 0b0110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare - 1 * 8 - 1) >= 0 && (kingSquare - 1 * 8 - 1) <= 63 && tempstate[kingSquare - 1 * 8 - 1] === 0b0110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare + 1 * 8 - 1) >= 0 && (kingSquare + 1 * 8 - 1) <= 63 && tempstate[kingSquare + 1 * 8 - 1] === 0b0110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare + 1 * 8 + 1) >= 0 && (kingSquare + 1 * 8 + 1) <= 63 && tempstate[kingSquare + 1 * 8 + 1] === 0b0110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare + 1) >= 0 && (kingSquare + 1) <= 63 && tempstate[kingSquare + 1] === 0b0110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare - 1) >= 0 && (kingSquare - 1) <= 63 && tempstate[kingSquare - 1] === 0b0110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare - 1 * 8 + 1) >= 0 && (kingSquare - 1 * 8 + 1) <= 63 && tempstate[kingSquare - 1 * 8 + 1] === 0b0110 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare - 1 * 8 - 1) >= 0 && (kingSquare - 1 * 8 - 1) <= 63 && tempstate[kingSquare - 1 * 8 - 1] === 0b0110 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare + 1 * 8 - 1) >= 0 && (kingSquare + 1 * 8 - 1) <= 63 && tempstate[kingSquare + 1 * 8 - 1] === 0b0110 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare + 1 * 8 + 1) >= 0 && (kingSquare + 1 * 8 + 1) <= 63 && tempstate[kingSquare + 1 * 8 + 1] === 0b0110 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare + 1) >= 0 && (kingSquare + 1) <= 63 && tempstate[kingSquare + 1] === 0b0110 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare - 1) >= 0 && (kingSquare - 1) <= 63 && tempstate[kingSquare - 1] === 0b0110 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
 
         return false;
 
@@ -614,73 +586,73 @@ function check(tempstate) {
 
     else {  //for a black king 
 
-        if ((kingSquare + 1 * 8 + 1) >= 0 && (kingSquare + 1 * 8 + 1) <= 63 && tempstate[kingSquare + 1 * 8 + 1] === 0b1001) return true;  //check by white  pawn
-        if ((kingSquare + 1 * 8 - 1) >= 0 && (kingSquare + 1 * 8 - 1) <= 63 && tempstate[kingSquare + 1 * 8 - 1] === 0b1001) return true;
-        if ((kingSquare + 1 * 8 + 2) >= 0 && (kingSquare + 1 * 8 + 2) <= 63 && tempstate[kingSquare + 1 * 8 + 2] === 0b1011) return true;   //check by white knight
-        if ((kingSquare + 1 * 8 - 2) >= 0 && (kingSquare + 1 * 8 - 2) <= 63 && tempstate[kingSquare + 1 * 8 - 2] === 0b1011) return true;
-        if ((kingSquare - 1 * 8 - 2) >= 0 && (kingSquare - 1 * 8 - 2) <= 63 && tempstate[kingSquare - 1 * 8 - 2] === 0b1011) return true;
-        if ((kingSquare - 1 * 8 + 2) >= 0 && (kingSquare - 1 * 8 + 2) <= 63 && tempstate[kingSquare - 1 * 8 + 2] === 0b1011) return true;
-        if ((kingSquare - 2 * 8 + 1) >= 0 && (kingSquare - 2 * 8 + 1) <= 63 && tempstate[kingSquare - 2 * 8 + 1] === 0b1011) return true;
-        if ((kingSquare - 2 * 8 - 1) >= 0 && (kingSquare - 2 * 8 - 1) <= 63 && tempstate[kingSquare - 2 * 8 - 1] === 0b1011) return true;
-        if ((kingSquare + 2 * 8 - 1) >= 0 && (kingSquare + 2 * 8 - 1) <= 63 && tempstate[kingSquare + 2 * 8 - 1] === 0b1011) return true;
-        if ((kingSquare + 2 * 8 + 1) >= 0 && (kingSquare + 2 * 8 + 1) <= 63 && tempstate[kingSquare + 2 * 8 + 1] === 0b1011) return true;
+        if ((kingSquare - 1 * 8 + 1) >= 0 && (kingSquare - 1 * 8 + 1) <= 63 && tempstate[kingSquare - 1 * 8 + 1] === 0b1001 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;  //check by black pawn
+        if ((kingSquare - 1 * 8 - 1) >= 0 && (kingSquare - 1 * 8 - 1) <= 63 && tempstate[kingSquare - 1 * 8 - 1] === 0b1001 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;
+        if ((kingSquare + 1 * 8 + 2) >= 0 && (kingSquare + 1 * 8 + 2) <= 63 && tempstate[kingSquare + 1 * 8 + 2] === 0b1011 && (kingSquare % 8 + 2) === (kingSquare + 2) % 8) return true;   //check by black knight
+        if ((kingSquare + 1 * 8 - 2) >= 0 && (kingSquare + 1 * 8 - 2) <= 63 && tempstate[kingSquare + 1 * 8 - 2] === 0b1011 && (kingSquare % 8 - 2) === (kingSquare - 2) % 8) return true;
+        if ((kingSquare - 1 * 8 - 2) >= 0 && (kingSquare - 1 * 8 - 2) <= 63 && tempstate[kingSquare - 1 * 8 - 2] === 0b1011 && (kingSquare % 8 - 2) === (kingSquare - 2) % 8) return true;
+        if ((kingSquare - 1 * 8 + 2) >= 0 && (kingSquare - 1 * 8 + 2) <= 63 && tempstate[kingSquare - 1 * 8 + 2] === 0b1011 && (kingSquare % 8 + 2) === (kingSquare + 2) % 8) return true;
+        if ((kingSquare - 2 * 8 + 1) >= 0 && (kingSquare - 2 * 8 + 1) <= 63 && tempstate[kingSquare - 2 * 8 + 1] === 0b1011 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;
+        if ((kingSquare - 2 * 8 - 1) >= 0 && (kingSquare - 2 * 8 - 1) <= 63 && tempstate[kingSquare - 2 * 8 - 1] === 0b1011 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;
+        if ((kingSquare + 2 * 8 - 1) >= 0 && (kingSquare + 2 * 8 - 1) <= 63 && tempstate[kingSquare + 2 * 8 - 1] === 0b1011 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;
+        if ((kingSquare + 2 * 8 + 1) >= 0 && (kingSquare + 2 * 8 + 1) <= 63 && tempstate[kingSquare + 2 * 8 + 1] === 0b1011 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] === 0b1100) return true;  //check by white bishop
-            else if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] === 0b1101) return true; //check by white queen
-            else if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] != 0b0000) break;     //a piece interuppts the diagonal
+            if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] === 0b1100 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true;  //check by black bishop
+            else if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] === 0b1101 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true; //check by black queen
+            else if ((kingSquare + i * 8 + i) >= 0 && (kingSquare + i * 8 + i) <= 63 && tempstate[kingSquare + i * 8 + i] != 0b1000) break;     //a piece interuppts the diagonal
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] === 0b1100) return true;
-            else if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] === 0b1101) return true;
-            else if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] != 0b0000) break;
+            if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] === 0b1100 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true;  //check by black bishop
+            else if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] === 0b1101 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true; //check by black queen
+            else if ((kingSquare + i * 8 - i) >= 0 && (kingSquare + i * 8 - i) <= 63 && tempstate[kingSquare + i * 8 - i] != 0b0000) break;     //a piece interuppts the diagonal
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] === 0b1100) return true;
-            else if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] === 0b1101) return true;
-            else if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] != 0b0000) break;
+            if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] === 0b1100 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true;  //check by black bishop
+            else if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] === 0b1101 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true; //check by black queen
+            else if ((kingSquare - i * 8 - i) >= 0 && (kingSquare - i * 8 - i) <= 63 && tempstate[kingSquare - i * 8 - i] != 0b0000) break;     //a piece interuppts the diagonal
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] === 0b1100) return true;
-            else if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] === 0b1101) return true;
-            else if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] != 0b0000) break;
+            if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] === 0b1100 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true;  //check by black bishop
+            else if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] === 0b1101 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true; //check by black queen
+            else if ((kingSquare - i * 8 + i) >= 0 && (kingSquare - i * 8 + i) <= 63 && tempstate[kingSquare - i * 8 + i] != 0b0000) break;     //a piece interuppts the diagonal
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare - i * 8) >= 0 && (kingSquare - i * 8) <= 63 && tempstate[kingSquare - i * 8] === 0b1010) return true;
-            else if ((kingSquare - i * 8) >= 0 && (kingSquare - i * 8) <= 63 && tempstate[kingSquare - i * 8] === 0b1101) return true;
-            else if ((kingSquare - i * 8) >= 0 && (kingSquare - i * 8) <= 63 && tempstate[kingSquare - i * 8] != 0b0000) break;
+            if ((kingSquare - i * 8) >= 0 && (kingSquare - i * 8) <= 63 && tempstate[kingSquare - i * 8] === 0b1010) return true;  //check by black rook
+            else if ((kingSquare - i * 8) >= 0 && (kingSquare - i * 8) <= 63 && tempstate[kingSquare - i * 8] === 0b1101) return true; //check by black queen
+            else if ((kingSquare - i * 8) >= 0 && (kingSquare - i * 8) <= 63 && tempstate[kingSquare - i * 8] != 0b0000) break;     //a piece interuppts the row(rank)/column(file)
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare + i * 8) >= 0 && (kingSquare + i * 8) <= 63 && tempstate[kingSquare + i * 8] === 0b1010) return true;
-            else if ((kingSquare + i * 8) >= 0 && (kingSquare + i * 8) <= 63 && tempstate[kingSquare + i * 8] === 0b1101) return true;
-            else if ((kingSquare + i * 8) >= 0 && (kingSquare + i * 8) <= 63 && tempstate[kingSquare + i * 8] != 0b0000) break;
+            if ((kingSquare + i * 8) >= 0 && (kingSquare + i * 8) <= 63 && tempstate[kingSquare + i * 8] === 0b1010) return true;  //check by black rook
+            else if ((kingSquare + i * 8) >= 0 && (kingSquare + i * 8) <= 63 && tempstate[kingSquare + i * 8] === 0b1101) return true; //check by black queen
+            else if ((kingSquare + i * 8) >= 0 && (kingSquare + i * 8) <= 63 && tempstate[kingSquare + i * 8] != 0b0000) break;     //a piece interuppts the row(rank)/column(file)
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] === 0b1010) return true;
-            else if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] === 0b1101) return true;
-            else if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] != 0b0000) break;
+            if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] === 0b1010 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true;  //check by black rook
+            else if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] === 0b1101 && (kingSquare % 8 + i) === (kingSquare + i) % 8) return true; //check by black queen
+            else if ((kingSquare + i) >= 0 && (kingSquare + i) <= 63 && tempstate[kingSquare + i] != 0b0000) break;     //a piece interuppts the row(rank)/column(file)
         }
 
         for (let i = 1; i < 8; i++) {
-            if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] === 0b1010) return true;
-            else if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] === 0b1101) return true;
-            else if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] != 0b0000) break;
+            if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] === 0b1010 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true;  //check by black rook
+            else if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] === 0b1101 && (kingSquare % 8 - i) === (kingSquare - i) % 8) return true; //check by black queen
+            else if ((kingSquare - i) >= 0 && (kingSquare - i) <= 63 && tempstate[kingSquare - i] != 0b0000) break;     //a piece interuppts the row(rank)/column(file)
         }
 
-        if ((kingSquare + 1 * 8) >= 0 && (kingSquare + 1 * 8) <= 63 && tempstate[kingSquare + 1 * 8] === 0b1110) return true;  //check by white  king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare - 1 * 8) >= 0 && (kingSquare - 1 * 8) <= 63 && tempstate[kingSquare - 1 * 8] === 0b1110) return true;  //check by white  king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare - 1 * 8 + 1) >= 0 && (kingSquare - 1 * 8 + 1) <= 63 && tempstate[kingSquare - 1 * 8 + 1] === 0b1110) return true;  //check by white king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare - 1 * 8 - 1) >= 0 && (kingSquare - 1 * 8 - 1) <= 63 && tempstate[kingSquare - 1 * 8 - 1] === 0b1110) return true;  //check by white king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare + 1 * 8 - 1) >= 0 && (kingSquare + 1 * 8 - 1) <= 63 && tempstate[kingSquare + 1 * 8 - 1] === 0b1110) return true;  //check by white  king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare + 1 * 8 + 1) >= 0 && (kingSquare + 1 * 8 + 1) <= 63 && tempstate[kingSquare + 1 * 8 + 1] === 0b1110) return true;  //check by white  king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare + 1) >= 0 && (kingSquare + 1) <= 63 && tempstate[kingSquare + 1] === 0b1110) return true;  //check by white king (obv not possible, but it means white king ends up being adjacent to the black king )
-        if ((kingSquare - 1) >= 0 && (kingSquare - 1) <= 63 && tempstate[kingSquare - 1] === 0b1110) return true;  //check by white king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare + 1 * 8) >= 0 && (kingSquare + 1 * 8) <= 63 && tempstate[kingSquare + 1 * 8] === 0b1110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare - 1 * 8) >= 0 && (kingSquare - 1 * 8) <= 63 && tempstate[kingSquare - 1 * 8] === 0b1110) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare - 1 * 8 + 1) >= 0 && (kingSquare - 1 * 8 + 1) <= 63 && tempstate[kingSquare - 1 * 8 + 1] === 0b1110 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare - 1 * 8 - 1) >= 0 && (kingSquare - 1 * 8 - 1) <= 63 && tempstate[kingSquare - 1 * 8 - 1] === 0b1110 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare + 1 * 8 - 1) >= 0 && (kingSquare + 1 * 8 - 1) <= 63 && tempstate[kingSquare + 1 * 8 - 1] === 0b1110 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare + 1 * 8 + 1) >= 0 && (kingSquare + 1 * 8 + 1) <= 63 && tempstate[kingSquare + 1 * 8 + 1] === 0b1110 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare + 1) >= 0 && (kingSquare + 1) <= 63 && tempstate[kingSquare + 1] === 0b1110 && (kingSquare % 8 + 1) === (kingSquare + 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
+        if ((kingSquare - 1) >= 0 && (kingSquare - 1) <= 63 && tempstate[kingSquare - 1] === 0b1110 && (kingSquare % 8 - 1) === (kingSquare - 1) % 8) return true;  //check by black king (obv not possible, but it means white king ends up being adjacent to the black king )
 
         return false;
 
@@ -724,14 +696,230 @@ function deepCopy(obj) {
     return JSON.parse(JSON.stringify(obj));
 }
 
-console.log(gamestate);
-let caststate = gamestate[64];
-console.log(caststate);
-// console.log(enpwhite.toString(2));
-// console.log(enpblack.toString(2));
-// console.log(11 % 8);
-// let gu = checkMate(gamestate);
-// console.log(gu);
+function switchTurn() {
+    turn = 1 - turn;
+    timerInterval = setInterval(updateClocks, 1000);
+    const turnDisplay = document.getElementById('status-display');
+    turnDisplay.textContent = `Turn: ${turn === 1 ? 'White' : 'Black'}`;
+}
+
+function updateClocks() {
+    if (turn === 1) {
+        whiteTime--;
+        whiteClock.textContent = formatTime(whiteTime);
+    }
+
+    else {
+        blackTime--;
+        blackClock.textContent = formatTime(blackTime);
+    }
+
+    if (whiteTime <= 0 || blackTime <= 0) {
+        clearInterval(timerInterval);
+        endGame();
+    }
+}
+
+function formatTime(timeInSeconds) {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = timeInSeconds % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
+
+function startGame() {
+    timerInterval = setInterval(updateClocks, 1000);
+}
+
+
+function endGame() {
+    // Game over logic here
+    let msg;
+    if (checkMate(gamestate)) {
+        // clearInterval(timerInterval);
+        frozenTimeWhite = whiteTime;
+        frozenTimeBlack = blackTime;
+        whiteClock.textContent = formatTime(frozenTimeWhite);
+        blackClock.textContent = formatTime(frozenTimeBlack);
+        console.log(frozenTimeBlack, frozenTimeWhite);
+        if (check(gamestate)) {
+            if (turn === 0) msg = "White wins by Checkmate!";
+            else msg = "Black wins by Checkmate!";
+            displayMessage(msg);
+        }
+        else {
+            msg = "DRAW by Stalemate!";
+        }
+    }
+
+    else if (whiteTime === 0) msg = "Black wins by Timeout!";
+    else msg = "White wins by timeout!";
+}
+
+function displayMessage(msg) {
+    document.querySelector('.chess-container').classList.add('blur'); // Blur the game board
+
+    const messageOverlay = document.createElement('div');
+    messageOverlay.classList.add('message-overlay');
+    messageOverlay.textContent = msg;
+
+    messageOverlay.addEventListener('click', () => {
+        restoreOriginalPage();
+    });
+
+    document.body.appendChild(messageOverlay); // Append the message overlay to the body
+}
+
+function restoreOriginalPage() {
+    document.querySelector('.chess-container').classList.remove('blur');
+    document.querySelector('.message-overlay').remove();
+}
+
+
+function addMove(move) {
+    let startSquare = move & (0b111111);
+    let targetSquare = (move & (0b111111000000)) >> 6;
+    let piece = gamestate[startSquare] & (0b0111);
+    let res = ``;
+    switch (piece) {
+        case 0b001:     //pawn
+
+
+            if ((startSquare - 1 * 8 + 1) === targetSquare && gamestate[targetSquare] === 0b0000) res += convert(startSquare % 8) + 'x' + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);   //enpassant capture by a black pawn
+            else if ((startSquare - 1 * 8 - 1) === targetSquare && gamestate[targetSquare] === 0b0000) res += convert(startSquare % 8) + 'x' + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);   //enpassant capture by a black pawn
+            else if ((startSquare + 1 * 8 - 1) === targetSquare && gamestate[targetSquare] === 0b0000) res += convert(startSquare % 8) + 'x' + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);   //enpassant capture by a white pawn
+            else if ((startSquare + 1 * 8 + 1) === targetSquare && gamestate[targetSquare] === 0b0000) res += convert(startSquare % 8) + 'x' + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);   //enpassant capture by a white pawn
+            else res += convert(startSquare % 8) + (gamestate[targetSquare] !== 0b0000 ? ('x' + convert(targetSquare % 8)) : '') + Math.floor(targetSquare / 8 + 1);
+            break;
+
+        case 0b011:     //knight
+            let f = -1;
+            let c;
+            if ((targetSquare + 1 * 8 + 2) >= 0 && (targetSquare + 1 * 8 + 2) < 64 && gamestate[targetSquare + 1 * 8 + 2] === gamestate[startSquare] && startSquare != (targetSquare + 1 * 8 + 2)) f = targetSquare + 1 * 8 + 2;
+            if ((targetSquare + 1 * 8 - 2) >= 0 && (targetSquare + 1 * 8 - 2) < 64 && gamestate[targetSquare + 1 * 8 - 2] === gamestate[startSquare] && startSquare != (targetSquare + 1 * 8 - 2)) f = targetSquare + 1 * 8 - 2;
+            if ((targetSquare - 1 * 8 - 2) >= 0 && (targetSquare - 1 * 8 - 2) < 64 && gamestate[targetSquare - 1 * 8 - 2] === gamestate[startSquare] && startSquare != (targetSquare - 1 * 8 - 2)) f = targetSquare - 1 * 8 - 2;
+            if ((targetSquare - 1 * 8 + 2) >= 0 && (targetSquare - 1 * 8 + 2) < 64 && gamestate[targetSquare - 1 * 8 + 2] === gamestate[startSquare] && startSquare != (targetSquare - 1 * 8 + 2)) f = targetSquare - 1 * 8 + 2;
+            if ((targetSquare - 2 * 8 + 1) >= 0 && (targetSquare - 2 * 8 + 1) < 64 && gamestate[targetSquare - 2 * 8 + 1] === gamestate[startSquare] && startSquare != (targetSquare - 2 * 8 + 1)) f = targetSquare - 2 * 8 + 1;
+            if ((targetSquare - 2 * 8 - 1) >= 0 && (targetSquare - 2 * 8 - 1) < 64 && gamestate[targetSquare - 2 * 8 - 1] === gamestate[startSquare] && startSquare != (targetSquare - 2 * 8 - 1)) f = targetSquare - 2 * 8 - 1;
+            if ((targetSquare + 2 * 8 - 1) >= 0 && (targetSquare + 2 * 8 - 1) < 64 && gamestate[targetSquare + 2 * 8 - 1] === gamestate[startSquare] && startSquare != (targetSquare + 2 * 8 - 1)) f = targetSquare + 2 * 8 - 1;
+            if ((targetSquare + 2 * 8 + 1) >= 0 && (targetSquare + 2 * 8 + 1) < 64 && gamestate[targetSquare + 2 * 8 + 1] === gamestate[startSquare] && startSquare != (targetSquare + 2 * 8 + 1)) f = targetSquare + 2 * 8 + 1;
+
+            if (f != -1) {
+                let tmove = createMove(f, targetSquare);
+                if (isMoveValid(tmove)) {
+                    console.log(f);
+                    console.log(Math.floor(f / 8));
+                    console.log(Math.floor(startSquare / 8));
+
+                    if ((f % 8) === (startSquare % 8)) c = Math.floor((startSquare / 8) + 1);
+                    else c = convert(startSquare % 8);
+                }
+            }
+
+            res += 'N' + ((c === undefined) ? '' : c) + (gamestate[targetSquare] !== 0b0000 ? 'x' : '') + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);
+            break;
+
+        case 0b100:     //bishop
+            res += 'B' + (gamestate[targetSquare] !== 0b0000 ? 'x' : '') + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);
+            break;
+
+        case 0b010:     //rook
+
+            let f2 = -1;
+            let c2;
+
+            for (let i = 1; i < 8; i++) {
+                if ((targetSquare + i * 8) >= 0 && (targetSquare + i * 8) < 64 && gamestate[(targetSquare + i * 8)] === gamestate[startSquare] && startSquare != (targetSquare + i * 8)) f2 = (targetSquare + i * 8);
+                else if ((targetSquare + i * 8) >= 0 && (targetSquare + i * 8) < 64 && gamestate[(targetSquare + i * 8)] === 0b0000) continue;
+                else break;
+            }
+
+            for (let i = 1; i < 8; i++) {
+                if ((targetSquare - i * 8) >= 0 && (targetSquare - i * 8) < 64 && gamestate[(targetSquare - i * 8)] === gamestate[startSquare] && startSquare != (targetSquare - i * 8)) f2 = (targetSquare - i * 8);
+                else if ((targetSquare - i * 8) >= 0 && (targetSquare - i * 8) < 64 && gamestate[(targetSquare - i * 8)] === 0b0000) continue;
+                else break;
+            }
+
+            for (let i = 1; i < 8; i++) {
+                if ((targetSquare - i) >= 0 && (targetSquare - i) < 64 && gamestate[(targetSquare - i)] === gamestate[startSquare] && startSquare != (targetSquare - i)) f2 = (targetSquare - i);
+                else if ((targetSquare - i) >= 0 && (targetSquare - i) < 64 && gamestate[(targetSquare - i)] === 0b0000) continue;
+                else break;
+            }
+
+            for (let i = 1; i < 8; i++) {
+                if ((targetSquare + i) >= 0 && (targetSquare + i) < 64 && gamestate[(targetSquare + i)] === gamestate[startSquare] && startSquare != (targetSquare + i)) f2 = (targetSquare + i);
+                else if ((targetSquare + i) >= 0 && (targetSquare + i) < 64 && gamestate[(targetSquare + i)] === 0b0000) continue;
+                else break;
+            }
+
+            if (f2 != -1) {
+                let tmove = createMove(f2, targetSquare);
+                if (isMoveValid(tmove)) {
+
+                    if ((f2 % 8) === (startSquare % 8)) c2 = Math.floor((startSquare / 8) + 1);
+                    else c2 = convert(startSquare % 8);
+                }
+            }
+            res += 'R' + ((c2 === undefined) ? '' : c2) + (gamestate[targetSquare] !== 0b0000 ? 'x' : '') + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);
+            break;
+
+        case 0b101:     //QUEEN
+            res += 'Q' + (gamestate[targetSquare] !== 0b0000 ? 'x' : '') + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);
+            break;
+
+        case 0b110:     //king 
+            if (startSquare === 3 && targetSquare === 1) res += 'O-O';
+            else if (startSquare === 3 && targetSquare === 5) res += 'O-O-O';
+            else if (startSquare === 59 && targetSquare === 57) res += 'O-O';
+            else if (startSquare === 59 && targetSquare === 61) res += 'O-O-O';
+            else res += 'K' + (gamestate[targetSquare] !== 0b0000 ? 'x' : '') + convert(targetSquare % 8) + Math.floor(targetSquare / 8 + 1);
+            break;
+
+    }
+    let copy = deepCopy(res);
+
+    moveHistory.push(res);
+    updateMoveHistory();
+
+}
+
+function convert(num) {
+    if (num === 0) return 'h';
+    else if (num === 1) return 'g';
+    else if (num === 2) return 'f';
+    else if (num === 3) return 'e';
+    else if (num === 4) return 'd';
+    else if (num === 5) return 'c';
+    else if (num === 6) return 'b';
+    else return 'a';
+}
+
+function updateMoveHistory() {
+    const moveList = document.getElementById('moves-list');
+    moveList.innerHTML = ''; // Clear the existing list
+
+    for (let i = 0; i < moveHistory.length; i += 2) {
+        const moveItem = document.createElement('li');
+        const moveNumber = Math.floor(i / 2) + 1;
+        const whiteMove = moveHistory[i] || '';
+        const blackMove = moveHistory[i + 1] || '';
+
+        // Create text nodes with tab spaces
+        const moveText = document.createTextNode(`${moveNumber}. `);
+        const whiteMoveText = document.createTextNode(whiteMove);
+        const tabSpace = document.createTextNode('\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0'); // Tab space
+        const blackMoveText = document.createTextNode(blackMove);
+
+        moveItem.appendChild(moveText);
+        moveItem.appendChild(whiteMoveText);
+        moveItem.appendChild(tabSpace);
+        moveItem.appendChild(blackMoveText);
+
+        moveList.appendChild(moveItem);
+    }
+    moveList.scrollTop = moveList.scrollHeight;
+}
+
+
 
 
 
