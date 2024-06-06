@@ -1,0 +1,231 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+:root {
+    --body-color: #151b17;
+    --text-color: #ccc;
+    --highlight-color: #2c2f33;
+    --dark-background: #1e2124;
+}
+
+body {
+    min-height: 100vh;
+    background-color: var(--body-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--text-color);
+}
+
+.chess-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    margin-top: 50px;
+    width: 100%;
+    max-width: 1400px;
+}
+
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 350px;
+    margin-right: 50px;
+}
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 350px;
+    margin-left: 50px;
+    margin-top: 260px;
+}
+
+.board-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.clock {
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    width: 100px;
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #000;
+}
+
+#move-history {
+    width: 100%;
+    background-color: var(--dark-background);
+    border: 1px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+#move-history h3 {
+    margin: 0 0 10px 0;
+    padding: 10px;
+    background-color: var(--highlight-color);
+    border-bottom: 1px solid #333;
+    text-align: center;
+    color: #fff;
+}
+
+#moves-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 500px;
+    overflow-y: auto;
+    background-color: var(--dark-background);
+    color: #ccc;
+}
+
+#moves-list li {
+    padding: 10px 20px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+#moves-list li:nth-child(odd) {
+    background-color: #1e242a;
+}
+
+#moves-list li:nth-child(even) {
+    background-color: #161a1f;
+}
+
+#moves-list li:last-child {
+    border-bottom: none;
+}
+
+#chess-board {
+    display: grid;
+    grid-template-columns: repeat(8, 80px);
+    grid-template-rows: repeat(8, 80px);
+    gap: 0;
+    border: 2px solid #000;
+}
+
+.square {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.white-square {
+    background-color: #f0d9b5;
+}
+
+.black-square {
+    background-color: #b58863;
+}
+
+.piece {
+    width: 80%;
+    height: 80%;
+    cursor: pointer;
+}
+
+#player-info {
+    margin-bottom: 10px;
+}
+
+.player-name {
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    width: 100%;
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: #000;
+}
+
+#status-display {
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    width: 100%;
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #000;
+}
+
+#undo-button {
+    background-color: #ff6347;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#undo-button:hover {
+    background-color: #ff4500;
+}
+
+.blur {
+    filter: blur(5px);
+    pointer-events: none;
+    /* Allow clicks to pass through the blurred layer */
+}
+
+.message-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    /* Increase opacity for better visibility */
+    color: white;
+    /* Set text color to white */
+    font-size: 24px;
+    /* Increase font size */
+    padding: 20px;
+    /* Increase padding for better spacing */
+    border-radius: 10px;
+    z-index: 1000;
+    /* Ensure the message overlay is on top of other elements */
+}
+
+
+
+
+/* .message-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    font-size: 24px;
+    padding: 20px;
+} */
