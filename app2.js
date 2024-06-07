@@ -101,10 +101,17 @@ function makeMove(move) {           //used to make a move on the actual board
         let selectedPiece = gamestate[startSquare];
         let targetedPiece = gamestate[targetSquare];
 
+        if (gamestate[targetSquare]) playCaptureSound();
+        else playMoveSound();
+
+        let f = 0;
+
 
 
         gamestate[targetSquare] = gamestate[startSquare];
         gamestate[startSquare] = 0b0000;
+
+
 
         //--------------------------------------------------------------------------------------------------------------
 
@@ -113,18 +120,29 @@ function makeMove(move) {           //used to make a move on the actual board
 
         if (selectedPiece === 0b1001 && startSquare + 1 * 8 + 1 === targetSquare && targetedPiece === 0b0000) {       //if the white pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the black pawn off the board 
             gamestate[targetSquare - 1 * 8] = 0b0000;
+            playCaptureSound();
+            f++;
         }
 
         if (selectedPiece === 0b1001 && startSquare + 1 * 8 - 1 === targetSquare && targetedPiece === 0b0000) {       //if the white pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the black pawn off the board 
             gamestate[targetSquare - 1 * 8] = 0b0000;
+            playCaptureSound();
+            f++;
+
         }
 
         if (selectedPiece === 0b0001 && startSquare - 1 * 8 + 1 === targetSquare && targetedPiece === 0b0000) {       //if the black pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the white pawn off the board 
             gamestate[targetSquare + 1 * 8] = 0b0000;
+            playCaptureSound();
+            f++;
+
         }
 
         if (selectedPiece === 0b0001 && startSquare - 1 * 8 - 1 === targetSquare && targetedPiece === 0b0000) {       //if the black pawn makes a diagonal capture, and that square is empty, and the move has also passed to be valid, it means it is an en-passant capture, and we need to remove the white pawn off the board 
             gamestate[targetSquare + 1 * 8] = 0b0000;
+            playCaptureSound();
+            f++;
+
         }
 
         if (selectedPiece === 0b1001 && startSquare + 2 * 8 === targetSquare) {      //if the white pawn moves 2 squares ahead, we need to update the en-passant status 
@@ -181,6 +199,10 @@ function makeMove(move) {           //used to make a move on the actual board
 
         //------------------------------------------------------------------------------------------------------------------
 
+        if (f == 0) {
+            if (targetedPiece) playCaptureSound();
+            else playMoveSound();
+        }
 
 
         let copy = deepCopy(gamestate);
@@ -190,12 +212,12 @@ function makeMove(move) {           //used to make a move on the actual board
         console.log("turn after making move ", turn);
 
         if (checkMate(gamestate)) {
-            // if (check(gamestate)) {
-            //     console.log("CHECKMATE!");
-            // }
-            // else {
-            //     console.log("STALEMATE!");
-            // }
+            if (check(gamestate)) {
+                console.log("CHECKMATE!");
+            }
+            else {
+                console.log("STALEMATE!");
+            }
 
             endGame();
         }
@@ -508,6 +530,8 @@ function check(tempstate) {
         }
     }
 
+
+
     // console.log("king square of the current turn: ", kingSquare);
 
 
@@ -698,10 +722,10 @@ function deepCopy(obj) {
 
 function switchTurn() {
     turn = 1 - turn;
-    timerInterval = setInterval(updateClocks, 1000);
     const turnDisplay = document.getElementById('status-display');
     turnDisplay.textContent = `Turn: ${turn === 1 ? 'White' : 'Black'}`;
 }
+
 
 function updateClocks() {
     if (turn === 1) {
@@ -718,6 +742,7 @@ function updateClocks() {
         clearInterval(timerInterval);
         endGame();
     }
+
 }
 
 function formatTime(timeInSeconds) {
@@ -734,46 +759,47 @@ function startGame() {
 function endGame() {
     // Game over logic here
     let msg;
+    clearInterval(timerInterval);           //stagnates the clocks of both colors
+
     if (checkMate(gamestate)) {
-        // clearInterval(timerInterval);
-        frozenTimeWhite = whiteTime;
-        frozenTimeBlack = blackTime;
-        whiteClock.textContent = formatTime(frozenTimeWhite);
-        blackClock.textContent = formatTime(frozenTimeBlack);
-        console.log(frozenTimeBlack, frozenTimeWhite);
         if (check(gamestate)) {
+
             if (turn === 0) msg = "White wins by Checkmate!";
             else msg = "Black wins by Checkmate!";
             displayMessage(msg);
         }
         else {
             msg = "DRAW by Stalemate!";
+            displayMessage(msg);
         }
     }
+
 
     else if (whiteTime === 0) msg = "Black wins by Timeout!";
     else msg = "White wins by timeout!";
 }
 
 function displayMessage(msg) {
+    console.log("Displaying message:", msg);
     document.querySelector('.chess-container').classList.add('blur'); // Blur the game board
 
     const messageOverlay = document.createElement('div');
     messageOverlay.classList.add('message-overlay');
     messageOverlay.textContent = msg;
+    console.log("msg displayed");
+
+    document.body.appendChild(messageOverlay); // Append the message overlay to the body
 
     messageOverlay.addEventListener('click', () => {
         restoreOriginalPage();
     });
 
-    document.body.appendChild(messageOverlay); // Append the message overlay to the body
 }
 
 function restoreOriginalPage() {
     document.querySelector('.chess-container').classList.remove('blur');
     document.querySelector('.message-overlay').remove();
 }
-
 
 function addMove(move) {
     let startSquare = move & (0b111111);
@@ -918,6 +944,20 @@ function updateMoveHistory() {
     }
     moveList.scrollTop = moveList.scrollHeight;
 }
+
+function playMoveSound() {
+    var moveSound = document.getElementById("moveSound");
+    moveSound.play();
+}
+function playCaptureSound() {
+    var moveSound = document.getElementById("CaptureSound");
+    moveSound.play();
+}
+
+startGame();
+
+// console.log(formatTime(450));
+
 
 
 
