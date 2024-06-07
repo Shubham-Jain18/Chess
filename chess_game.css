@@ -212,6 +212,43 @@ body {
 }
 
 
+/* .highlight {
+    background-color: yellow;
+} */
+
+.highlight {
+    background-color: rgba(251, 236, 103, 0.925);
+    /* Soft yellow color with 50% opacity */
+    position: relative;
+    /* Ensure that the pseudo-element is positioned relative to the square */
+}
+
+.highlight-check {
+    background-color: rgb(242, 151, 151);
+}
+
+/* Dot in the center of highlighted squares */
+.highlight::after {
+    content: '';
+    /* Required for pseudo-elements */
+    position: absolute;
+    /* Position the dot relative to the square */
+    top: 50%;
+    /* Position the dot vertically in the center */
+    left: 50%;
+    /* Position the dot horizontally in the center */
+    transform: translate(-50%, -50%);
+    /* Center the dot precisely */
+    width: 6px;
+    /* Adjust size of dot as needed */
+    height: 6px;
+    background-color: black;
+    /* Color of the dot */
+    border-radius: 50%;
+    /* Ensures the dot is circular */
+}
+
+
 
 
 /* .message-overlay {
