@@ -73,6 +73,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const move = createMove(startSquare, targetSquare);
       makeMove(move);
       updateBoard();
+      if (check(gamestate)) {       //to highlight the king in danger in check
+        const squares = document.querySelectorAll('.square');
+        squares.forEach((square, i) => {
+          if (gamestate[63 - i] === ((turn << 3) | (0b0110))) {
+            square.classList.add('highlight-check');
+          }
+        });
+      }
       selectedPiece = null;
     }
 
@@ -82,8 +90,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if ((turn === 1 && pieceColor === white) || (turn === 0 && pieceColor === black)) {
         selectedPiece = clickedPiece;
+        const startRow = parseInt(selectedPiece.dataset.row);
+        const startCol = parseInt(selectedPiece.dataset.col);
+        const startSquare = boardSize * boardSize - 1 - startRow * boardSize - startCol;
+
+        highlight(startSquare);     //highlighting all possible moves
       }
     }
+  }
+
+  function highlight(startSquare) {
+    const squares = document.querySelectorAll('.square');
+    squares.forEach((square, i) => {
+      let tpmove = createMove(startSquare, 63 - i);
+      if (isMoveValid(tpmove)) {
+        square.classList.add('highlight');
+      }
+    });
   }
 
 
@@ -107,19 +130,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       switchTurn();
     }
+    selectedPiece = null;
   }
 
   document.getElementById('undo-button').addEventListener('click', undoMove);
 
   function updateBoard() {
     initializeBoard();
-    // for (let i = 0; i < gameStateHistory.length; i++) {
-    //   console.log(gameStateHistory[i]);
-    // }
-    // console.log("---------------------------------------");
   }
 
 
   initializeBoard();
-  startGame();
+
 });
+
