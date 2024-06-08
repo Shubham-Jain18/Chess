@@ -45,6 +45,21 @@ const initialBoard = [
     [rook | white, knight | white, bishop | white, queen | white, king | white, bishop | white, knight | white, rook | white]
 ];
 
+const pieceImages = {
+    [rook | black]: 'media/Chess_rdt60.png',
+    [knight | black]: 'media/Chess_ndt60.png',
+    [bishop | black]: 'media/Chess_bdt60.png',
+    [queen | black]: 'media/Chess_qdt60.png',
+    [king | black]: 'media/Chess_kdt60.png',
+    [pawn | black]: 'media/Chess_pdt60.png',
+    [rook | white]: 'media/Chess_rlt60.png',
+    [knight | white]: 'media/Chess_nlt60.png',
+    [bishop | white]: 'media/Chess_blt60.png',
+    [queen | white]: 'media/Chess_qlt60.png',
+    [king | white]: 'media/Chess_klt60.png',
+    [pawn | white]: 'media/Chess_plt60.png'
+  };
+
 function initializeGameState() {
     for (let row = 0; row < 8; row++) {
         for (let col = 0; col < 8; col++) {
@@ -111,6 +126,13 @@ function makeMove(move) {           //used to make a move on the actual board
         gamestate[targetSquare] = gamestate[startSquare];
         gamestate[startSquare] = 0b0000;
 
+        //-----------------------------------------------------------------------------------------------------------------
+
+        //pawn promotion section 
+        if ((selectedPiece === (pawn | white) && targetSquare >= 56) || (selectedPiece === (pawn | black) && targetSquare <= 7)) {
+            showPawnPromotionWindow(startSquare, targetSquare, selectedPiece);
+            return;
+        }
 
 
         //--------------------------------------------------------------------------------------------------------------
@@ -196,7 +218,7 @@ function makeMove(move) {           //used to make a move on the actual board
 
         if (gamestate[3] != 0b1110) gamestate[64] &= 0b0011;       //white king is not present on its square, means it must have moved!
         if (gamestate[59] != 0b0110) gamestate[64] &= 0b1100;      //same for black king 
-
+        
         //------------------------------------------------------------------------------------------------------------------
 
         if (f == 0) {
@@ -232,6 +254,58 @@ function makeMove(move) {           //used to make a move on the actual board
     }
 }
 
+function showPawnPromotionWindow(startSquare, targetSquare, selectedPiece) {
+    // Create a pawn promotion popup element
+    const popup = document.createElement('div');
+    popup.classList.add('pawn-promotion-popup');
+
+    // Create a popup content element
+    const popupContent = document.createElement('div');
+    popupContent.classList.add('pawn-promotion-popup-content');
+
+    // Create text for pawn promotion
+    const promotionText = document.createElement('p');
+    promotionText.textContent = 'Select a piece to promote your pawn:';
+
+    // Create buttons for each piece option
+    const pieceOptions = ['Queen', 'Rook', 'Knight', 'Bishop'];
+    pieceOptions.forEach(piece => {
+        const button = document.createElement('button');
+        button.textContent = piece;
+        button.addEventListener('click', () => {
+            // Update the gamestate with the selected piece
+            const newPiece = piece === 'Queen' ? queen : 
+                             piece === 'Rook' ? rook :
+                             piece === 'Knight' ? knight : bishop;
+            gamestate[targetSquare] = newPiece | (selectedPiece & white); // Ensure piece color is maintained
+
+            // Update the piece image on the board
+            const row = 7 - Math.floor(targetSquare / 8);
+            const col = 7 - (targetSquare % 8);
+            const pieceImage = document.querySelector(`[data-row="${row}"][data-col="${col}"] .piece`);
+            if (pieceImage) {
+                pieceImage.src = pieceImages[gamestate[targetSquare]];
+                pieceImage.dataset.piece = gamestate[targetSquare];
+            }
+            // Close the popup
+            popup.remove();
+            // Update the board
+            
+            // Continue with the game
+            let copy = deepCopy(gamestate);
+            gameStateHistory.push(copy);
+            switchTurn();
+        });
+        popupContent.appendChild(button);
+    });
+
+    // Append elements to the popup content
+    popupContent.appendChild(promotionText);
+    // Append the popup content to the popup
+    popup.appendChild(popupContent);
+    // Append the popup to the document body
+    document.body.appendChild(popup);
+}
 
 function makeTempMove(move, tempgameState) {
     // it checks a temporary gamestate by playing a temporary move on it, and then analysing on it 
