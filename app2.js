@@ -766,27 +766,41 @@ function endGame() {
 
             if (turn === 0) msg = "White wins by Checkmate!";
             else msg = "Black wins by Checkmate!";
-            displayMessage(msg);
+            
         }
         else {
             msg = "DRAW by Stalemate!";
-            displayMessage(msg);
+            
         }
     }
 
 
     else if (whiteTime === 0) msg = "Black wins by Timeout!";
     else msg = "White wins by timeout!";
+    displayMessage(msg);
 }
 
 function displayMessage(msg) {
     console.log("Displaying message:", msg);
     document.querySelector('.chess-container').classList.add('blur'); // Blur the game board
 
+    // Create the message overlay
     const messageOverlay = document.createElement('div');
     messageOverlay.classList.add('message-overlay');
-    messageOverlay.textContent = msg;
-    console.log("msg displayed");
+
+    // Create a paragraph to hold the message
+    const messageParagraph = document.createElement('p');
+    messageParagraph.textContent = msg;
+    messageOverlay.appendChild(messageParagraph);
+
+    // Create the Back to Main Page button
+    const backButton = document.createElement('button');
+    backButton.textContent = 'Back to Main Page';
+    backButton.id = 'back-to-main';
+    backButton.addEventListener('click', () => {
+        window.location.href = 'index.html';
+    });
+    messageOverlay.appendChild(backButton);
 
     document.body.appendChild(messageOverlay); // Append the message overlay to the body
 
@@ -794,11 +808,15 @@ function displayMessage(msg) {
         restoreOriginalPage();
     });
 
+    console.log("msg displayed");
 }
 
 function restoreOriginalPage() {
     document.querySelector('.chess-container').classList.remove('blur');
-    document.querySelector('.message-overlay').remove();
+    const messageOverlay = document.querySelector('.message-overlay');
+    if (messageOverlay) {
+        messageOverlay.remove();
+    }
 }
 
 function addMove(move) {
