@@ -141,6 +141,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   initializeBoard();
+  // Add the following for the resign functionality
+  document.getElementById('resign-button').addEventListener('click', () => {
+    const resignMessage = document.getElementById('resign-message');
+    const modal = document.getElementById('resign-modal');
+    modal.classList.remove('d-none');
+    document.querySelector('.chess-container').classList.add('blur');
+    const winner = turn === 1 ? 'Black' : 'White'; // Assuming turn 1 is White and 0 is Black
+
+    resignMessage.textContent = `${winner} wins!`;
+    modal.style.display = 'flex'; // Show the modal
+  });
+
+  // Get the modal and the back-to-main button
+  const modal = document.getElementById('resign-modal');
+  const backToMain = document.getElementById('back-to-main');
+
+  // When the user clicks on the back-to-main button, redirect to main page
+  backToMain.onclick = function() {
+    window.location.href = 'index.html';
+  }
+  
+  
 
 });
 
