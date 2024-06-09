@@ -146,7 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const resignMessage = document.getElementById('resign-message');
     const modal = document.getElementById('resign-modal');
     modal.classList.remove('d-none');
-    document.querySelector('.chess-container').classList.add('blur');
+    document.querySelector('.board-panel').classList.add('blur');
+    document.querySelector('.left-panel').classList.add('blur');
+    document.querySelector('.right-panel').classList.add('blur');
     const winner = turn === 1 ? 'Black' : 'White'; // Assuming turn 1 is White and 0 is Black
 
     resignMessage.textContent = `${winner} wins!`;
@@ -161,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
   backToMain.onclick = function() {
     window.location.href = 'index.html';
   }
+  
   
   
 
