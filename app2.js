@@ -856,7 +856,9 @@ function endGame() {
 
 function displayMessage(msg) {
     console.log("Displaying message:", msg);
-    document.querySelector('.chess-container').classList.add('blur'); // Blur the game board
+    document.querySelector('.board-panel').classList.add('blur');
+    document.querySelector('.left-panel').classList.add('blur');
+    document.querySelector('.right-panel').classList.add('blur');
 
     // Create the message overlay
     const messageOverlay = document.createElement('div');
@@ -886,7 +888,9 @@ function displayMessage(msg) {
 }
 
 function restoreOriginalPage() {
-    document.querySelector('.chess-container').classList.remove('blur');
+    document.querySelector('.board-panel').classList.remove('blur');
+    document.querySelector('.left-panel').classList.remove('blur');
+    document.querySelector('.right-panel').classList.remove('blur');
     const messageOverlay = document.querySelector('.message-overlay');
     if (messageOverlay) {
         messageOverlay.remove();
