@@ -29,22 +29,17 @@ body {
     
 }
 
-.chess-container {
-    
-    justify-content: center;
-    align-items: flex-start;
-    margin-top: 100px;
-    margin-left: 50px;
-    
-}
+
 
 .left-panel {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 350px;
+    margin-top: 150px;
+    margin-right: 50px;
     margin-bottom: 20px;
-    max-height:300px;
+    max-height:600px;
     overflow-y: auto;
     
 }
@@ -53,6 +48,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 200px;
+    margin-left: 50px;
     width: 350px;
     
     
@@ -147,11 +144,11 @@ body {
 }
 
 .white-square {
-    background-color: #ffce9e;
+    background-color: #f0d9b5;
 }
 
 .black-square {
-    background-color: #d18b47;
+    background-color: #b58863;
 }
 
 .piece {
@@ -412,22 +409,34 @@ body {
     background-color: #45a049;
 }
 
+
+
 @media only screen and (max-width: 1280px) {
     .container {
-        flex-direction: column;
-        align-items: center; /* Center align the items */
+      flex-direction: column;
+      align-items: center;
     }
-
-    .chess-container {
-        margin-top: 50px; /* Adjust the margin as needed */
-        margin-left: 0; /* Reset margin-left */
-    }
-
+  
     .board-panel {
-        margin-top: 0; /* Reset margin-top */
-        margin-bottom: 50px; /* Add margin-bottom to create space between board-panel and chess-container */
+      margin-top: 0;
+      margin-bottom: 50px;
+      order: 1; /* Change the order for smaller screens */
     }
-}
+  
+    .left-panel {
+        margin-top: 20px;
+        margin-left: 0px;
+        margin-right: 0px;
+        order: 2; /* Change the order for smaller screens */
+    }
+  
+    .right-panel {
+        margin-top: 20px;
+        margin-left: 0px;
+        margin-right: 0px;
+        order: 3; /* Change the order for smaller screens */
+    }
+  }
 
 
 
