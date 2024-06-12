@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Chess{% endblock %}</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'styles.css' %}" />
+    <!----===== Boxicons CSS ===== -->
+    <link href="https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css" rel="stylesheet" />
+</head>
+<body>
+    <nav class="sidebar close">
+        <header>
+            <div class="image-text">
+                <span class="image">
+                    <img src="{% static 'media/horse.png' %}" alt="" />
+                </span>
+                <div class="text logo-text">
+                    <span class="name">Chess</span>
+                </div>
+            </div>
+            <i class="bx bx-chevron-right toggle"></i>
+        </header>
+        <div class="menu-bar">
+            <div class="menu">
+                <ul class="menu-links">
+                    <li class="nav-link">
+                        <a href="{% url 'home' %}">
+                            <i class="bx bx-home-alt icon"></i>
+                            <span class="text nav-text">Home</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="#">
+                            <i class="bx bx-bar-chart-alt-2 icon"></i>
+                            <span class="text nav-text">Play</span>
+                        </a>
+                    </li>
+
+
+                    {% if user.is_authenticated %}
+                    <li class="nav-link">
+                        <a href="{% url 'profile' %}">
+                            <i class="bx bx-user-circle icon"></i>
+                            <span class="text nav-text">Profile</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <form id="logout-form" action="{% url 'logout' %}" method="post">
+                            {% csrf_token %}
+                        </form>
+                        <a href="#" onclick="document.getElementById('logout-form').submit()">
+                            <i class="bx bx-log-out icon"></i>
+                            <span class="text nav-text">Logout</span>
+                        </a>
+                    </li>
+                    {% else %}
+                        <li class="nav-link">
+                            <a href="{% url 'login' %}">
+                                <i class="bx bx-log-in icon"></i>
+                                <span class="text nav-text">Login</span>
+                            </a>
+                        </li>
+                        <li class="nav-link">
+                            <a href="{% url 'register' %}">
+                                <i class="bx bx-user-plus icon"></i>
+                                <span class="text nav-text">SignUp</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row align-items-center justify-content-center">
+            {% block content %}
+            <!-- Content will be injected here -->
+            {% endblock %}
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <script src="{% static 'script.js' %}"></script>
+</body>
+</html>

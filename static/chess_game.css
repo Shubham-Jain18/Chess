@@ -1,0 +1,457 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+:root {
+    --body-color: #151b17;
+    --text-color: #ccc;
+    --highlight-color: #2c2f33;
+    --dark-background: #1e2124;
+}
+
+body {
+    min-height: 100vh;
+    background-color: var(--body-color);
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    color: var(--text-color);
+}
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+
+}
+
+
+
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 350px;
+    margin-top: 150px;
+    margin-right: 50px;
+    margin-bottom: 20px;
+    max-height:600px;
+    overflow-y: auto;
+
+}
+
+.right-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 200px;
+    margin-left: 50px;
+    width: 350px;
+
+
+}
+
+.board-panel {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    margin-top: 50px;
+
+    align-items: center;
+
+
+}
+
+.clock {
+    background-color: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    text-align: center;
+    width: 100px;
+    font-size: 16px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    color: #000;
+}
+
+#move-history {
+    width: 100%;
+    background-color: var(--dark-background);
+    border: 1px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+#move-history h3 {
+    margin: 0 0 10px 0;
+    padding: 10px;
+    background-color: var(--highlight-color);
+    border-bottom: 1px solid #333;
+    text-align: center;
+    color: #fff;
+}
+
+#moves-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 500px;
+    overflow-y: auto;
+    background-color: var(--dark-background);
+    color: #ccc;
+}
+
+#moves-list li {
+    padding: 10px 20px;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+#moves-list li:nth-child(odd) {
+    background-color: #1e242a;
+}
+
+#moves-list li:nth-child(even) {
+    background-color: #161a1f;
+}
+
+#moves-list li:last-child {
+    border-bottom: none;
+}
+
+#chess-board {
+    display: grid;
+    grid-template-columns: repeat(8, 80px);
+    grid-template-rows: repeat(8, 80px);
+    gap: 0;
+    border: 2px solid #000;
+}
+
+.square {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.white-square {
+    background-color: #f0d9b5;
+}
+
+.black-square {
+    background-color: #b58863;
+}
+
+.piece {
+    width: 80%;
+    height: 80%;
+    cursor: pointer;
+}
+
+#player-info {
+    margin-bottom: 10px;
+}
+.right-panel {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px; /* Optional: Add some padding for better aesthetics */
+}
+
+.right-panel-box {
+    background-color: #2c2f33;
+    border:#333;
+    padding: 20px; /* Adjust padding as needed */
+    border-radius: 10px; /* Optional: Add rounded corners */
+    width: 100%; /* Make it fill the right panel */
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Optional: Add a shadow for better visual separation */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+}
+
+.right-panel-box > div,
+.right-panel-box > button {
+    margin-bottom: 10px; /* Optional: Add spacing between elements */
+}
+
+/* Ensure the buttons and text have sufficient contrast */
+.right-panel-box button {
+    background-color: #555; /* Adjust button color if needed */
+    color: #fff;
+}
+
+.right-panel-box .player-name,
+.right-panel-box #status-display {
+    color: #fff;
+}
+
+.player-name {
+
+    padding: 10px;
+
+    border-radius: 5px;
+    text-align: center;
+    width: 100%;
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: #fff;
+}
+
+#status-display {
+
+    padding: 10px;
+
+    border-radius: 5px;
+    text-align: center;
+    width: 100%;
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+#undo-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#undo-button:hover {
+    background-color: #45a049;
+}
+
+#resign-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#resign-button:hover{
+    background-color: #45a049;
+}
+
+.blur {
+    filter: blur(5px);
+    pointer-events: none;
+    /* Allow clicks to pass through the blurred layer */
+}
+
+.message-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    /* Increase opacity for better visibility */
+    color: white;
+    /* Set text color to white */
+    font-size: 24px;
+    /* Increase font size */
+    padding: 20px;
+    /* Increase padding for better spacing */
+    border-radius: 10px;
+    z-index: 1000;
+    /* Ensure the message overlay is on top of other elements */
+}
+
+
+/* .highlight {
+    background-color: yellow;
+} */
+
+.highlight {
+    background-color: rgba(251, 236, 103, 0.925);
+    /* Soft yellow color with 50% opacity */
+    position: relative;
+    /* Ensure that the pseudo-element is positioned relative to the square */
+}
+
+.highlight-check {
+    background-color: rgb(242, 151, 151);
+}
+
+/* Dot in the center of highlighted squares */
+.highlight::after {
+    content: '';
+    /* Required for pseudo-elements */
+    position: absolute;
+    /* Position the dot relative to the square */
+    top: 50%;
+    /* Position the dot vertically in the center */
+    left: 50%;
+    /* Position the dot horizontally in the center */
+    transform: translate(-50%, -50%);
+    /* Center the dot precisely */
+    width: 6px;
+    /* Adjust size of dot as needed */
+    height: 6px;
+    background-color: black;
+    /* Color of the dot */
+    border-radius: 50%;
+    /* Ensures the dot is circular */
+}
+
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1000; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0, 0, 0); /* Fallback color */
+    background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+    justify-content: center;
+    align-items: center;
+
+}
+
+.modal-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    /* Increase opacity for better visibility */
+    color: white;
+    /* Set text color to white */
+    font-size: 24px;
+    /* Increase font size */
+    padding: 20px;
+    /* Increase padding for better spacing */
+    border-radius: 10px;
+    z-index: 1000;
+    /* Ensure the message overlay is on top of other elements */
+
+    text-align: center;
+
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#back-to-main {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    margin-top: 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#back-to-main:hover {
+    background-color: #45a049;
+}
+/* Add this CSS to your styles */
+.pawn-promotion-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.pawn-promotion-popup-content {
+    background-color: #2c2f33;
+    color:#fff;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.pawn-promotion-popup-content button {
+    background-color: #4CAF50;
+    color:#fff;
+    border-radius: 5px;
+    margin: 5px;
+    padding: 10px;
+}
+.pawn-promotion-popup-content button:hover{
+    background-color: #45a049;
+}
+
+
+
+@media only screen and (max-width: 1280px) {
+    .container {
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .board-panel {
+      margin-top: 0;
+      margin-bottom: 50px;
+      order: 1; /* Change the order for smaller screens */
+    }
+
+    .left-panel {
+        margin-top: 20px;
+        margin-left: 0px;
+        margin-right: 0px;
+        order: 2; /* Change the order for smaller screens */
+    }
+
+    .right-panel {
+        margin-top: 20px;
+        margin-left: 0px;
+        margin-right: 0px;
+        order: 3; /* Change the order for smaller screens */
+    }
+  }
+
+
+
+/* .message-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    font-size: 24px;
+    padding: 20px;
+} */
