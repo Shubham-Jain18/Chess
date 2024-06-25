@@ -28,31 +28,64 @@ document.addEventListener('DOMContentLoaded', (event) => {
         backButton.classList.add('d-none');
     }
 
+    const singlePlayerButton =document.getElementById('single_player');
+    const multiPlayerButton = document.getElementById('multi_player');
+    const botButton = document.getElementById('bot');
     // Event listener for play mode buttons
-    playOptionButtons.forEach(button => {
-        button.addEventListener('click', function(event) {
-            if (!isAuthenticated) {
-                event.preventDefault(); // Prevent default button action
-                loginAlert.classList.remove('d-none'); // Show the login alert
-            } else {
-                showGameModes();
-            }
-        });
+
+    singlePlayerButton.addEventListener('click', function(event) {
+        if (!isAuthenticated) {
+            event.preventDefault(); // Prevent default button action
+            loginAlert.classList.remove('d-none'); // Show the login alert
+        } else {
+            showGameModes();
+        }
     });
+
+    multiPlayerButton.addEventListener('click', function(event) {
+        if (!isAuthenticated) {
+            event.preventDefault(); // Prevent default button action
+            loginAlert.classList.remove('d-none'); // Show the login alert
+        } else {
+            showGameModes();
+        }
+    });
+
+    botButton.addEventListener('click', function(event) {
+        if (!isAuthenticated) {
+            event.preventDefault(); // Prevent default button action
+            loginAlert.classList.remove('d-none'); // Show the login alert
+        } else {
+            window.location.href='/bot/';
+        }
+    });
+
     backButton.addEventListener('click', showPlayOptions);
 
     toggle.addEventListener("click" , () =>{
         sidebar.classList.toggle("close");
     })
     // Open chess game page when a game mode is selected
-    const gameOptionButtons = document.querySelectorAll('.game-option');
-    gameOptionButtons.forEach(button => {
 
-        button.addEventListener('click', () => {
-            console.log("button is getting clicked");
-            window.location.href = '/chess_game/';
-        });
+    const blitzButton= document.getElementById('blitz');
+    const bulletButton= document.getElementById('bullet');
+    const rapidButton=document.getElementById('rapid');
+    blitzButton.addEventListener('click',()=>{
+        console.log("blitz is getting clicked");
+        window.location.href='/blitz/';
+
     });
+    bulletButton.addEventListener('click',()=>{
+        console.log("bullet is getting clicked");
+        window.location.href='/bullet/';
+
+    });
+    rapidButton.addEventListener('click',()=>{
+        console.log("rapid is getting clicked");
+        window.location.href='/rapid/';
+
+    })
+
 
 
 

@@ -32,8 +32,23 @@ def home(request):
 
 
 @login_required
-def chess_game(request):
-    return render(request, 'chess_game.html')
+def rapid(request):
+    return render(request, 'rapid.html')
+
+
+@login_required
+def bullet(request):
+    return render(request, 'bullet.html')
+
+
+@login_required
+def blitz(request):
+    return render(request, 'blitz.html')
+
+
+@login_required
+def bot(request):
+    return render(request, 'bot.html')
 
 
 def register(request):

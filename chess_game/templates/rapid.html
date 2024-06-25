@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rapid</title>
+    <link rel="stylesheet" href="{% static 'chess_game.css' %}" />
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div id="move-history">
+                <h3>Move History</h3>
+                <ul id="moves-list"></ul>
+            </div>
+        </div>
+        <div class="board-panel">
+            <div id="black-clock" class="clock">10:00</div>
+            <div id="chess-board"></div>
+            <div id="white-clock" class="clock">10:00</div>
+        </div>
+
+        <div class="right-panel">
+            <div class="right-panel-box">
+                <div id="player-info">
+                    <div id="white-player" class="player-name">White: Player 1</div>
+                    <div id="black-player" class="player-name">Black: Player 2</div>
+                </div>
+                <div id="status-display">Turn: White</div>
+                <button id="undo-button">Undo</button>
+                <button id="resign-button">Resign</button>
+            </div>
+        </div>
+
+        <audio id="moveSound" src="{% static 'audio/move.mp3' %}" preload="auto"></audio>
+        <audio id="CaptureSound" src="{% static 'audio/capture.mp3' %}" preload="auto"></audio>
+
+        <div id="resign-modal" class="modal d-none">
+            <div class="modal-content">
+                <p id="resign-message"></p>
+                <button id="back-to-main">Back to Main Page</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'app2.js' %}"></script>
+    <script src="{% static 'chess_game.js' %}"></script>
+</body>
+</html>

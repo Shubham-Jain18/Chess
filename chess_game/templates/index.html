@@ -18,18 +18,18 @@
         <div id="play-options" class="text-center mb-5 " data-authenticated="{{ user.is_authenticated }}">
             <h1 class="text-white mb-5">Choose the player modes</h1>
             <div class="btn-group-vertical w-75 mx-auto mb-5" role="group" aria-label="Play Options">
-                <button type="button" class="btn btn-lg mb-4 play-option">Play on 1 Device</button>
-                <button type="button" class="btn btn-lg mb-4 play-option">Play with Friend</button>
-                <button type="button" class="btn btn-lg mb-4 play-option">Play with Bot</button>
+                <button type="button" class="btn btn-lg mb-4 play-option" id="single_player">Play on 1 Device</button>
+                <button type="button" class="btn btn-lg mb-4 play-option" id="multi_player">Play with Friend</button>
+                <button type="button" class="btn btn-lg mb-4 play-option" id="bot">Play with Bot</button>
             </div>
         </div>
         <!-- Game Options -->
         <div id="game-options" class="text-center d-none">
             <h1 class="text-white mb-5">Choose the Game modes</h1>
             <div class="btn-group-vertical w-75 mx-auto mb-5" role="group" aria-label="Game Options">
-                <button type="button" class="btn btn-lg mb-4 game-option" data-time="180">Blitz</button>
-                <button type="button" class="btn btn-lg mb-4 game-option" data-time="60">Bullet</button>
-                <button type="button" class="btn btn-lg mb-4 game-option" data-time="600">Rapid</button>
+                <button type="button" class="btn btn-lg mb-4 game-option" data-time="180" id="blitz">Blitz</button>
+                <button type="button" class="btn btn-lg mb-4 game-option" data-time="60" id="bullet">Bullet</button>
+                <button type="button" class="btn btn-lg mb-4 game-option" data-time="600" id="rapid">Rapid</button>
             </div>
         </div>
         <!-- Back Button -->
