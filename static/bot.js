@@ -1002,17 +1002,19 @@ function displayMessage(msg) {
     backButton.textContent = 'Back to Main Page';
     backButton.id = 'back-to-main';
     backButton.addEventListener('click', () => {
-        window.location.href = 'index.html';
+        console.log("back ho jao");
+        // window.location.href = 'index.html';
+        window.location.href = '/home/';
     });
     messageOverlay.appendChild(backButton);
 
     document.body.appendChild(messageOverlay); // Append the message overlay to the body
 
-    messageOverlay.addEventListener('click', () => {
-        restoreOriginalPage();
-    });
+    // messageOverlay.addEventListener('click', () => {
+    //     restoreOriginalPage();
+    // });
 
-    console.log("msg displayed");
+    // console.log("msg displayed");
 }
 
 function restoreOriginalPage() {
