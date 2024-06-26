@@ -58,7 +58,7 @@ const pieceImages = {
     [queen | white]: '/static/media/Chess_qlt60.png',
     [king | white]: '/static/media/Chess_klt60.png',
     [pawn | white]: '/static/media/Chess_plt60.png'
-  };
+};
 
 function initializeGameState() {
     for (let row = 0; row < 8; row++) {
@@ -275,8 +275,8 @@ function showPawnPromotionWindow(startSquare, targetSquare, selectedPiece) {
         button.addEventListener('click', () => {
             // Update the gamestate with the selected piece
             const newPiece = piece === 'Queen' ? queen :
-                             piece === 'Rook' ? rook :
-                             piece === 'Knight' ? knight : bishop;
+                piece === 'Rook' ? rook :
+                    piece === 'Knight' ? knight : bishop;
             gamestate[targetSquare] = newPiece | (selectedPiece & white); // Ensure piece color is maintained
 
             // Update the piece image on the board
@@ -874,17 +874,19 @@ function displayMessage(msg) {
     backButton.textContent = 'Back to Main Page';
     backButton.id = 'back-to-main';
     backButton.addEventListener('click', () => {
-        window.location.href = 'index.html';
+        console.log("back ho jao");
+        // window.location.href = 'index.html';
+        window.location.href = '/home/';
     });
     messageOverlay.appendChild(backButton);
 
     document.body.appendChild(messageOverlay); // Append the message overlay to the body
 
-    messageOverlay.addEventListener('click', () => {
-        restoreOriginalPage();
-    });
+    // messageOverlay.addEventListener('click', () => {
+    //     restoreOriginalPage();
+    // });
 
-    console.log("msg displayed");
+    // console.log("msg displayed");
 }
 
 function restoreOriginalPage() {
